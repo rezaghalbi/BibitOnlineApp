@@ -1,0 +1,8 @@
+{
+  "dbConfig": {
+    "host": "localhost",
+    "user": "root",
+    "password": "mypass123",
+    "database": "bibit_db"
+  }
+}
