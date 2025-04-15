@@ -7,7 +7,6 @@ const router = express.Router();
 // Rute untuk registrasi admin
 router.post('/register', AdminController.register);
 
-// Rute untuk login admin
 router.post('/login', AdminController.login);
 
 // Rute untuk melihat semua pengguna

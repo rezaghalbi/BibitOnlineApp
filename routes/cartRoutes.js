@@ -1,13 +1,13 @@
 const express = require('express');
-const TransactionController = require('../controllers/TransactionController');
 const { authenticateUser } = require('../middleware/authUser');
+const CartController = require('../controllers/CartController');
+const { authenticateAdmin } = require('../middleware/authAdmin');
 
 const router = express.Router();
 
 // Rute untuk membuat transaksi
-router.post('/', authenticateUser, TransactionController.create);
-
-// Rute untuk melihat semua transaksi berdasarkan user_id
-router.get('/', authenticateUser, TransactionController.getAllByUserId);
+router.post('/', authenticateUser, CartController.addToCart);
+router.get('/', authenticateUser, CartController.getCart);
+router.delete('/delete', authenticateAdmin, CartController.deleteFromCart);
 
 module.exports = router;

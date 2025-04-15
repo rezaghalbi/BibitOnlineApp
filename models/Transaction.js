@@ -36,6 +36,49 @@ class Transaction {
       await connection.end();
     }
   }
+
+  // Metode untuk mengambil semua transaksi berdasarkan user_id
+  static async findAllByUserId(user_id) {
+    const connection = await mysql.createConnection(dbConfig);
+    try {
+      const [rows] = await connection.execute(
+        'SELECT * FROM transactions WHERE user_id = ?',
+        [user_id]
+      );
+      return rows; // Mengembalikan semua transaksi untuk user_id yang diberikan
+    } catch (error) {
+      throw error; // Melemparkan error jika terjadi kesalahan
+    } finally {
+      await connection.end(); // Menutup koneksi
+    }
+  }
+  // Metode untuk mengambil semua transaksi (admin)
+  static async findAll() {
+    const connection = await mysql.createConnection(dbConfig);
+    try {
+      const [rows] = await connection.execute('SELECT * FROM transactions');
+      return rows; // Mengembalikan semua transaksi
+    } catch (error) {
+      throw error; // Melemparkan error jika terjadi kesalahan
+    } finally {
+      await connection.end(); // Menutup koneksi
+    }
+  }
+  // Metode untuk memperbarui status transaksi
+  static async updateStatus(transactionId, status) {
+    const connection = await mysql.createConnection(dbConfig);
+    try {
+      const [result] = await connection.execute(
+        'UPDATE transactions SET status = ? WHERE transaction_id = ?',
+        [status, transactionId]
+      );
+      return result; // Mengembalikan hasil dari query update
+    } catch (error) {
+      throw error; // Melemparkan error jika terjadi kesalahan
+    } finally {
+      await connection.end(); // Menutup koneksi
+    }
+  }
 }
 
 module.exports = Transaction;

@@ -7,7 +7,7 @@ class CartController {
     const user_id = req.userId; // Ambil userId dari token JWT
 
     // Validasi input
-    if (typeof product_id === 'undefined' || typeof jumlah === 'undefined') {
+    if (!product_id || !jumlah) {
       return res
         .status(400)
         .json({ message: 'Product ID and quantity are required' });
@@ -38,12 +38,7 @@ class CartController {
 
     try {
       const cartItems = await Cart.getCartByUserId(user_id);
-      // Hitung total harga
-      const total_harga = cartItems.reduce(
-        (total, item) => total + item.harga * item.jumlah,
-        0
-      );
-      res.status(200).json({ cartItems, total_harga });
+      res.status(200).json(cartItems);
     } catch (error) {
       console.error('Error fetching cart:', error);
       res.status(500).json({

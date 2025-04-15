@@ -6,17 +6,19 @@ class Product {
     const connection = await mysql.createConnection(dbConfig);
     try {
       const [result] = await connection.execute(
-        'INSERT INTO products (nama_produk, deskripsi, harga, stok, admin_id) VALUES (?, ?, ?, ?, ?)',
+        'INSERT INTO products (nama_produk, deskripsi, harga, stok, admin_id, image_url) VALUES (?, ?, ?, ?, ?, ?)',
         [
           productData.nama_produk,
           productData.deskripsi,
           productData.harga,
           productData.stok,
           productData.admin_id,
+          productData.image_url, // Menyimpan URL gambar
         ]
       );
-      return result.insertId;
+      return result.insertId; // Mengembalikan ID produk yang baru dibuat
     } catch (error) {
+      console.error('Error in Product.create:', error); // Debugging
       throw error;
     } finally {
       await connection.end();
@@ -29,6 +31,7 @@ class Product {
       const [rows] = await connection.execute('SELECT * FROM products');
       return rows;
     } catch (error) {
+      console.error('Error in Product.findAll:', error); // Debugging
       throw error;
     } finally {
       await connection.end();
@@ -42,8 +45,9 @@ class Product {
         'SELECT * FROM products WHERE product_id = ?',
         [product_id]
       );
-      return rows[0];
+      return rows[0]; // Mengembalikan produk yang ditemukan
     } catch (error) {
+      console.error('Error in Product.findById:', error); // Debugging
       throw error;
     } finally {
       await connection.end();
@@ -54,17 +58,19 @@ class Product {
     const connection = await mysql.createConnection(dbConfig);
     try {
       const [result] = await connection.execute(
-        'UPDATE products SET nama_produk = ?, deskripsi = ?, harga = ?, stok = ? WHERE product_id = ?',
+        'UPDATE products SET nama_produk = ?, deskripsi = ?, harga = ?, stok = ?, image_url = ? WHERE product_id = ?',
         [
           productData.nama_produk,
           productData.deskripsi,
           productData.harga,
           productData.stok,
+          productData.image_url, // Menyimpan URL gambar
           product_id,
         ]
       );
-      return result;
+      return result; // Mengembalikan hasil update
     } catch (error) {
+      console.error('Error in Product.update:', error); // Debugging
       throw error;
     } finally {
       await connection.end();
@@ -78,8 +84,9 @@ class Product {
         'DELETE FROM products WHERE product_id = ?',
         [product_id]
       );
-      return result;
+      return result; // Mengembalikan hasil penghapusan
     } catch (error) {
+      console.error('Error in Product.deleteById:', error); // Debugging
       throw error;
     } finally {
       await connection.end();
