@@ -17,6 +17,6 @@ router.get('/:product_id', ProductController.getById);
 router.put('/:product_id', authenticateAdmin, ProductController.update);
 
 // Rute untuk menghapus produk (hanya admin)
-router.delete('/:product_id', authenticateAdmin, ProductController.delete);
+router.delete('/:product_id', authenticateAdmin, ProductController.deleteProduct);
 
 module.exports = router;

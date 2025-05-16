@@ -1,114 +1,121 @@
 const Product = require('../models/Product');
-const formidable = require('formidable');
+const { IncomingForm } = require('formidable');
+
 const axios = require('axios');
 const fs = require('fs');
+// Fungsi upload gambar ke Imgur
+async function uploadImageToImgur(imagePath) {
+  const imageData = fs.readFileSync(imagePath, { encoding: 'base64' });
 
+  const response = await axios.post(
+    'https://api.imgur.com/3/image',
+    {
+      image: imageData,
+      type: 'base64',
+    },
+    {
+      headers: {
+        Authorization: `Client-ID ${process.env.IMGUR_CLIENT_ID}`, // Tambahkan di .env
+      },
+    }
+  );
+
+  return response.data.data.link;
+}
 class ProductController {
   static async create(req, res) {
-    const form = new formidable.IncomingForm();
-    form.multiples = false; 
+    const form = new IncomingForm.IncomingForm();
+    form.multiples = false;
 
     form.parse(req, async (err, fields, files) => {
       if (err) {
-        console.error('Error parsing form:', err); // Debugging
+        console.error('❌ Error parsing form:', err);
         return res.status(400).json({ message: 'Error parsing the files' });
       }
 
       // Ambil nilai dari fields
-      const nama_produk = fields.nama_produk[0]; 
-      const deskripsi = fields.deskripsi[0]; 
-      const harga = fields.harga; 
-      const stok = fields.stok; 
-      const admin_id = req.adminId; 
+      const nama_produk = fields.nama_produk?.[0];
+      const deskripsi = fields.deskripsi?.[0];
+      const harga = fields.harga?.[0];
+      const stok = fields.stok?.[0];
+      const admin_id = req.adminId;
+
+      console.log('🧾 Parsed fields:', {
+        nama_produk,
+        deskripsi,
+        harga,
+        stok,
+        admin_id,
+      });
 
       // Validasi input
-      if (!nama_produk || !deskripsi || !harga || !stok) {
+      if (!nama_produk || !deskripsi || !harga || !stok || !admin_id) {
+        console.warn('⚠️ Missing required fields');
         return res.status(400).json({ message: 'All fields are required' });
       }
 
-      // Konversi harga dan stok ke tipe data yang benar
+      // Konversi ke tipe angka
       const hargaNumber = parseFloat(harga);
       const stokNumber = parseInt(stok);
 
       if (isNaN(hargaNumber) || isNaN(stokNumber)) {
+        console.warn('⚠️ Harga/Stok bukan angka valid:', { harga, stok });
         return res
           .status(400)
           .json({ message: 'Price and stock must be valid numbers' });
       }
 
-      let imageUrl = null; 
+      let imageUrl = null;
 
-      // Simpan gambar 
+      // Proses upload gambar jika ada
       if (files.images) {
-        const file = files.images; 
-        const oldPath = file.filepath; 
+        console.log('📁 files:', files);
+        const file = files.images;
+        // const oldPath = file.filepath;
+        const oldPath = files.images[0].filepath; // ✅ BENAR karena ambil elemen pertama dari array
 
-        // Upload ke Imgur
+        console.log('🖼️ Uploading image from path:', oldPath);
+
         try {
-          imageUrl = await uploadImageToImgur(oldPath); // Fungsi untuk mengupload gambar
+          imageUrl = await uploadImageToImgur(oldPath);
+          console.log('✅ Image uploaded successfully. URL:', imageUrl);
         } catch (uploadError) {
-          console.error('Error uploading image:', uploadError); 
+          console.error('❌ Error uploading image:', uploadError);
           return res.status(500).json({
             message: 'Error uploading image',
             error: uploadError.message,
           });
         }
+      } else {
+        console.warn('⚠️ No image file found in request');
       }
 
       try {
-        console.log('Creating product with data:', {
+        const productData = {
           nama_produk,
           deskripsi,
           harga: hargaNumber,
           stok: stokNumber,
           admin_id,
-          imageUrl,
-        }); // Debugging
+          image_url: imageUrl,
+        };
 
-        const productId = await Product.create({
-          nama_produk,
-          deskripsi,
-          harga: hargaNumber, // Pastikan harga adalah angka
-          stok: stokNumber, // Pastikan stok adalah angka
-          admin_id,
-          image_url: imageUrl, // Simpan URL gambar
+        console.log('📦 Creating product with data:', productData);
+
+        const productId = await Product.create(productData);
+
+        res.status(201).json({
+          message: 'Product created successfully',
+          productId,
         });
-
-        res
-          .status(201)
-          .json({ message: 'Product created successfully', productId });
       } catch (error) {
-        console.error('Error creating product:', error); // Debugging
-        res
-          .status(500)
-          .json({ message: 'Error creating product', error: error.message });
+        console.error('❌ Error creating product:', error);
+        res.status(500).json({
+          message: 'Error creating product',
+          error: error.message,
+        });
       }
     });
-  }
-
-  // Fungsi untuk mengupload gambar ke Imgur
-  static async uploadImageToImgur(imagePath) {
-    const clientId = '8e289d5a7ad458c'; // Ganti dengan Client ID Anda
-    const image = fs.readFileSync(imagePath).toString('base64');
-
-    try {
-      const response = await axios.post(
-        'https://api.imgur.com/3/image',
-        {
-          image: image,
-        },
-        {
-          headers: {
-            Authorization: `Client-ID ${clientId}`,
-          },
-        }
-      );
-
-      return response.data.data.link; // Mengembalikan URL gambar
-    } catch (error) {
-      console.error('Error uploading image to Imgur:', error);
-      throw error;
-    }
   }
 
   static async getAll(req, res) {
@@ -141,48 +148,53 @@ class ProductController {
   }
 
   static async update(req, res) {
-    const form = new formidable.IncomingForm();
-    form.multiples = false; // Hanya izinkan satu file
+    const { product_id } = req.params;
+
+    const form = new IncomingForm({ multiples: true, keepExtensions: true });
 
     form.parse(req, async (err, fields, files) => {
       if (err) {
-        console.error('Error parsing form:', err); // Debugging
+        console.error('❌ Error parsing form:', err);
         return res.status(400).json({ message: 'Error parsing the files' });
       }
 
-      const { product_id } = req.params;
-      const nama_produk = fields.nama_produk[0]; // Ambil nilai pertama dari array
-      const deskripsi = fields.deskripsi[0]; // Ambil nilai pertama dari array
-      const harga = fields.harga; // Ini seharusnya sudah menjadi string
-      const stok = fields.stok; // Ini seharusnya sudah menjadi string
+      console.log('✅ Parsed fields:', fields);
+      console.log('📁 files:', files);
 
-      // Validasi input
+      const { nama_produk, deskripsi, harga, stok } = fields;
+
       if (!nama_produk || !deskripsi || !harga || !stok) {
-        return res.status(400).json({ message: 'All fields are required' });
+        return res.status(400).json({ message: 'Semua field wajib diisi' });
       }
 
-      // Konversi harga dan stok ke tipe data yang benar
       const hargaNumber = parseFloat(harga);
       const stokNumber = parseInt(stok);
 
       if (isNaN(hargaNumber) || isNaN(stokNumber)) {
         return res
           .status(400)
-          .json({ message: 'Price and stock must be valid numbers' });
+          .json({ message: 'Harga dan stok harus angka valid' });
       }
 
-      let imageUrl = null; // Inisialisasi URL gambar
+      let imageUrl = null;
 
-      // Simpan gambar jika ada
       if (files.images) {
-        const file = files.images; // Ambil file gambar
-        const oldPath = file.filepath; // Path sementara file
+        const file = Array.isArray(files.images)
+          ? files.images[0]
+          : files.images;
+        const oldPath = file.filepath;
 
-        // Upload ke Imgur
+        if (!oldPath) {
+          return res.status(400).json({ message: 'Image filepath not found' });
+        }
+
+        console.log('🖼️ Uploading image from path:', oldPath);
+
         try {
-          imageUrl = await uploadImageToImgur(oldPath); // Fungsi untuk mengupload gambar
+          imageUrl = await uploadImageToImgur(oldPath);
+          console.log('✅ Image uploaded successfully:', imageUrl);
         } catch (uploadError) {
-          console.error('Error uploading image:', uploadError); // D
+          console.error('❌ Error uploading image:', uploadError);
           return res.status(500).json({
             message: 'Error uploading image',
             error: uploadError.message,
@@ -191,50 +203,57 @@ class ProductController {
       }
 
       try {
-        console.log('Updating product with ID:', product_id, 'and data:', {
-          nama_produk,
-          deskripsi,
-          harga: hargaNumber,
-          stok: stokNumber,
-          imageUrl,
-        }); // Debugging
-
-        const result = await Product.update(product_id, {
-          nama_produk,
-          deskripsi,
-          harga: hargaNumber, // Pastikan harga adalah angka
-          stok: stokNumber, // Pastikan stok adalah angka
-          image_url: imageUrl, // Simpan URL gambar
-        });
-
-        if (result.affectedRows === 0) {
-          return res.status(404).json({ message: 'Product not found' });
+        const product = await Product.findById(product_id);
+        if (!product) {
+          return res.status(404).json({ message: 'Produk tidak ditemukan' });
         }
 
-        res.status(200).json({ message: 'Product updated successfully' });
+        // Data yang akan diupdate
+        const updatedData = {
+          nama_produk: nama_produk[0], // ambil nilai pertama
+          deskripsi: deskripsi[0],
+          harga: parseInt(harga[0]),
+          stok: parseInt(stok[0]),
+          image_url: imageUrl, // dari hasil upload imgur
+        };
+
+        // Panggil method update di model
+        await Product.update(product_id, updatedData);
+
+        res.status(200).json({
+          message: 'Produk berhasil diperbarui',
+          product: { product_id, ...updatedData },
+        });
       } catch (error) {
-        console.error('Error updating product:', error); // Debugging
-        res
-          .status(500)
-          .json({ message: 'Error updating product', error: error.message });
+        console.error('❌ Error updating product:', error);
+        res.status(500).json({
+          message: 'Error updating product',
+          error: error.message,
+        });
       }
     });
   }
-
-  static async delete(req, res) {
-    const { product_id } = req.params;
-
+  static async deleteProduct(req, res) {
     try {
-      const result = await Product.deleteById(product_id);
+      const { product_id } = req.params;
+
+      if (!product_id) {
+        return res.status(400).json({ message: 'Product ID is required' });
+      }
+
+      const result = await Product.delete(product_id);
+
       if (result.affectedRows === 0) {
         return res.status(404).json({ message: 'Product not found' });
       }
+
       res.status(200).json({ message: 'Product deleted successfully' });
     } catch (error) {
-      console.error('Error deleting product:', error); // Debugging
-      res
-        .status(500)
-        .json({ message: 'Error deleting product', error: error.message });
+      console.error('❌ Error deleting product:', error);
+      res.status(500).json({
+        message: 'Failed to delete product',
+        error: error.message,
+      });
     }
   }
 }

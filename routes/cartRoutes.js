@@ -8,6 +8,6 @@ const router = express.Router();
 // Rute untuk membuat transaksi
 router.post('/', authenticateUser, CartController.addToCart);
 router.get('/', authenticateUser, CartController.getCart);
-router.delete('/delete', authenticateAdmin, CartController.deleteFromCart);
+router.delete('/:cart_id', authenticateAdmin, CartController.deleteFromCart);
 
 module.exports = router;

@@ -54,39 +54,47 @@ class Product {
     }
   }
 
-  static async update(product_id, productData) {
-    const connection = await mysql.createConnection(dbConfig);
+  static async update(product_id, data) {
+    const connection = await mysql.createConnection(dbConfig); // pastikan ini sudah ada
     try {
-      const [result] = await connection.execute(
-        'UPDATE products SET nama_produk = ?, deskripsi = ?, harga = ?, stok = ?, image_url = ? WHERE product_id = ?',
-        [
-          productData.nama_produk,
-          productData.deskripsi,
-          productData.harga,
-          productData.stok,
-          productData.image_url, // Menyimpan URL gambar
-          product_id,
-        ]
-      );
-      return result; // Mengembalikan hasil update
+      const { nama_produk, deskripsi, harga, stok, image_url } = data;
+
+      const query = `
+      UPDATE products 
+      SET nama_produk = ?, deskripsi = ?, harga = ?, stok = ?, image_url = ?
+      WHERE product_id = ?
+    `;
+
+      const values = [
+        nama_produk,
+        deskripsi,
+        harga,
+        stok,
+        image_url,
+        product_id,
+      ];
+
+      console.log('🔎 Update values:', values); // debug tambahan
+      const [result] = await connection.execute(query, values);
+      return result;
     } catch (error) {
-      console.error('Error in Product.update:', error); // Debugging
+      console.error('Error in Product.update:', error);
       throw error;
     } finally {
       await connection.end();
     }
   }
 
-  static async deleteById(product_id) {
+  static async delete(product_id) {
     const connection = await mysql.createConnection(dbConfig);
     try {
       const [result] = await connection.execute(
         'DELETE FROM products WHERE product_id = ?',
         [product_id]
       );
-      return result; // Mengembalikan hasil penghapusan
+      return result;
     } catch (error) {
-      console.error('Error in Product.deleteById:', error); // Debugging
+      console.error('Error in Product.delete:', error);
       throw error;
     } finally {
       await connection.end();

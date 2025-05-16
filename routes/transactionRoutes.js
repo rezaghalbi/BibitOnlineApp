@@ -22,4 +22,5 @@ router.put(
   authenticateAdmin,
   TransactionController.updateStatus
 );
+
 module.exports = router;
