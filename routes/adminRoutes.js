@@ -18,4 +18,9 @@ router.delete('/users/:user_id', authenticateAdmin, AdminController.deleteUser);
 // Rute untuk mencari pengguna berdasarkan ID
 router.get('/users/:user_id', authenticateAdmin, AdminController.getUserById);
 
+// Add this to your admin routes (routes/adminRoutes.js)
+router.get('/verify', authenticateAdmin, (req, res) => {
+  res.status(200).json({ message: 'Token is valid' });
+});
+
 module.exports = router;

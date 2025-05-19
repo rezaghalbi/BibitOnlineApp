@@ -1,0 +1,74 @@
+<nav id="sidebar" class="sidebar">
+  <div class="sidebar-header text-center py-3">
+    <h4 class="mb-0"><i class="fas fa-store-alt me-2"></i> TokoKu</h4>
+    <small class="text-muted">Admin Panel</small>
+  </div>
+  <ul class="list-unstyled components">
+    <li>
+      <a href="dashboard.html">
+        <i class="fas fa-tachometer-alt me-2"></i> Dashboard
+      </a>
+    </li>
+    <li class="active">
+      <a
+        href="#productsSubmenu"
+        data-bs-toggle="collapse"
+        aria-expanded="true"
+        class="dropdown-toggle"
+      >
+        <i class="fas fa-boxes me-2"></i> Produk
+      </a>
+      <ul class="collapse list-unstyled show" id="productsSubmenu">
+        <li>
+          <a href="products.html" class="active"
+            ><i class="fas fa-list me-2"></i> Daftar Produk</a
+          >
+        </li>
+        <li>
+          <a href="products.html?action=add"
+            ><i class="fas fa-plus-circle me-2"></i> Tambah Produk</a
+          >
+        </li>
+        <li>
+          <a href="#"><i class="fas fa-tags me-2"></i> Kategori</a>
+        </li>
+      </ul>
+    </li>
+    <li>
+      <a
+        href="#usersSubmenu"
+        data-bs-toggle="collapse"
+        aria-expanded="false"
+        class="dropdown-toggle"
+      >
+        <i class="fas fa-users me-2"></i> Pengguna
+      </a>
+      <ul class="collapse list-unstyled" id="usersSubmenu">
+        <li>
+          <a href="users.html"
+            ><i class="fas fa-list me-2"></i> Daftar Pengguna</a
+          >
+        </li>
+        <li>
+          <a href="users.html?action=add"
+            ><i class="fas fa-user-plus me-2"></i> Tambah Pengguna</a
+          >
+        </li>
+      </ul>
+    </li>
+    <li>
+      <a href="transactions.html">
+        <i class="fas fa-receipt me-2"></i> Transaksi
+      </a>
+    </li>
+    <li>
+      <a href="#"> <i class="fas fa-chart-line me-2"></i> Laporan </a>
+    </li>
+    <li>
+      <a href="#"> <i class="fas fa-cog me-2"></i> Pengaturan </a>
+    </li>
+  </ul>
+  <div class="sidebar-footer text-center py-3">
+    <small class="text-muted">v1.0.0</small>
+  </div>
+</nav>

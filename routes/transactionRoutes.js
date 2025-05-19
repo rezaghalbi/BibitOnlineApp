@@ -22,5 +22,21 @@ router.put(
   authenticateAdmin,
   TransactionController.updateStatus
 );
+router.get('/count', authenticateAdmin, async (req, res) => {
+  try {
+    const count = await Transaction.getCount();
+    res.json({ total: count });
+  } catch (error) {
+    res.status(500).json({ message: 'Error getting transaction count' });
+  }
+});
+router.get('/recent', authenticateAdmin, async (req, res) => {
+  try {
+    const transactions = await Transaction.getRecent(5);
+    res.json(transactions);
+  } catch (error) {
+    res.status(500).json({ message: 'Error getting recent transactions' });
+  }
+});
 
 module.exports = router;

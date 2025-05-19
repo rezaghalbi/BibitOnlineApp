@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin Dashboard</title>
+    <!-- Bootstrap CSS -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <!-- Font Awesome -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <!-- Custom CSS -->
+    <link href="css/dashboard.css" rel="stylesheet" />
+    <link href="css/animate.css" rel="stylesheet" />
+  </head>
+  <body class="d-flex">
+    <!-- Sidebar -->
+    <div id="sidebar-container"></div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+      <!-- Header -->
+      <div id="header-container"></div>
+
+      <!-- Dashboard Content -->
+      <main class="container-fluid py-4">
+        <div class="row animate__animated animate__fadeIn">
+          <div class="col-12 mb-4">
+            <h2 class="fw-bold">Dashboard admin bibit online</h2>
+            <nav aria-label="breadcrumb">
+              <col class="breadcrumb">
+                
+              </col>
+            </nav>
+          </div>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="row mb-4">
+          <div class="col-md-4 mb-3">
+            <div class="card stat-card shadow-sm bg-primary text-white">
+              <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                  <div>
+                    <h6 class="card-subtitle mb-2">Total Users</h6>
+                    <h2 class="card-title mb-0" id="totalUsers">0</h2>
+                  </div>
+                  <i class="fas fa-users fa-3x opacity-50"></i>
+                </div>
+                <a href="users.html" class="stretched-link"></a>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4 mb-3">
+            <div class="card stat-card shadow-sm bg-success text-white">
+              <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                  <div>
+                    <h6 class="card-subtitle mb-2">Total Products</h6>
+                    <h2 class="card-title mb-0" id="totalProducts">0</h2>
+                  </div>
+                  <i class="fas fa-boxes fa-3x opacity-50"></i>
+                </div>
+                <a href="products.html" class="stretched-link"></a>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4 mb-3">
+            <div class="card stat-card shadow-sm bg-warning text-dark">
+              <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                  <div>
+                    <h6 class="card-subtitle mb-2">Total Transactions</h6>
+                    <h2 class="card-title mb-0" id="totalTransactions">0</h2>
+                  </div>
+                  <i class="fas fa-receipt fa-3x opacity-50"></i>
+                </div>
+                <a href="transactions.html" class="stretched-link"></a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="row">
+          <div class="col-lg-8 mb-4">
+            <div class="card shadow-sm">
+              <div class="card-header bg-white">
+                <h5 class="mb-0">Recent Transactions</h5>
+              </div>
+              <div class="card-body">
+                <div class="table-responsive">
+                  <table class="table table-hover">
+                    <thead>
+                      <tr>
+                        <th>ID</th>
+                        <th>User</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                        <th>Date</th>
+                      </tr>
+                    </thead>
+                    <tbody id="recentTransactions">
+                      <!-- Filled by JavaScript -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-lg-4 mb-4">
+            <div class="card shadow-sm">
+              <div class="card-header bg-white">
+                <h5 class="mb-0">Quick Actions</h5>
+              </div>
+              <div class="card-body">
+                <div class="d-grid gap-2">
+                  <a
+                    href="products.html?action=add"
+                    class="btn btn-outline-primary text-start"
+                  >
+                    <i class="fas fa-plus me-2"></i> Add New Product
+                  </a>
+                  <a
+                    href="users.html?action=add"
+                    class="btn btn-outline-success text-start"
+                  >
+                    <i class="fas fa-user-plus me-2"></i> Add New User
+                  </a>
+                  <a
+                    href="transactions.html"
+                    class="btn btn-outline-info text-start"
+                  >
+                    <i class="fas fa-search me-2"></i> View All Transactions
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      <!-- Footer -->
+      <div id="footer-container"></div>
+    </div>
+
+    <!-- Bootstrap JS Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Custom JS -->
+    <script src="js/auth.js"></script>
+    <script src="js/dashboard.js"></script>
+  </body>
+</html>

@@ -8,7 +8,7 @@ function authenticateAdmin(req, res, next) {
     return res.sendStatus(401); // Unauthorized
   }
 
-  jwt.verify(token, process.env.JWT_SECRET, (err, admin) => {
+  jwt.verify(token, process.env.ADMIN_JWT_SECRET, (err, admin) => {
     if (err) {
       return res.sendStatus(403); // Forbidden
     }

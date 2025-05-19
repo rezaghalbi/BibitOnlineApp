@@ -1,36 +1,39 @@
 const Product = require('../models/Product');
-const { IncomingForm } = require('formidable');
-
+const formidable = require('formidable');
+const path = require('path');
 const axios = require('axios');
 const fs = require('fs');
 // Fungsi upload gambar ke Imgur
-async function uploadImageToImgur(imagePath) {
-  const imageData = fs.readFileSync(imagePath, { encoding: 'base64' });
+async function uploadImageToImgur(filePath) {
+  const imageData = fs.readFileSync(filePath, { encoding: 'base64' });
 
   const response = await axios.post(
     'https://api.imgur.com/3/image',
-    {
-      image: imageData,
-      type: 'base64',
-    },
+    { image: imageData, type: 'base64' },
     {
       headers: {
-        Authorization: `Client-ID ${process.env.IMGUR_CLIENT_ID}`, // Tambahkan di .env
+        Authorization: `Client-ID ${process.env.IMGUR_CLIENT_ID}`,
       },
     }
   );
 
-  return response.data.data.link;
+  if (response.data && response.data.success) {
+    return response.data.data.link; // URL gambar di Imgur
+  } else {
+    throw new Error('Failed to upload image to Imgur');
+  }
 }
 class ProductController {
   static async create(req, res) {
-    const form = new IncomingForm.IncomingForm();
-    form.multiples = false;
+    const form = new formidable.IncomingForm();
+    form.uploadDir = path.join(__dirname, '../uploads'); // temporary simpan file sebelum upload ke Imgur
+    form.keepExtensions = true;
 
     form.parse(req, async (err, fields, files) => {
-      if (err) {
-        console.error('❌ Error parsing form:', err);
-        return res.status(400).json({ message: 'Error parsing the files' });
+      if (!files.image) {
+        console.warn('⚠️ No image file found in request');
+      } else {
+        console.log('✅ Image file detected:', files.image);
       }
 
       // Ambil nilai dari fields
@@ -68,23 +71,26 @@ class ProductController {
       let imageUrl = null;
 
       // Proses upload gambar jika ada
-      if (files.images) {
-        console.log('📁 files:', files);
-        const file = files.images;
-        // const oldPath = file.filepath;
-        const oldPath = files.images[0].filepath; // ✅ BENAR karena ambil elemen pertama dari array
+      if (files.image) {
+        const file = Array.isArray(files.image) ? files.image[0] : files.image;
+        const oldPath = file.filepath || file.path;
+        console.log('📁 files.images:', files.image);
+        console.log('📁 file:', file);
+        console.log('📁 oldPath:', oldPath);
 
-        console.log('🖼️ Uploading image from path:', oldPath);
+        if (!oldPath) {
+          console.warn('⚠️ No filepath in uploaded file');
+          return res.status(400).json({ message: 'Invalid file upload' });
+        }
 
         try {
           imageUrl = await uploadImageToImgur(oldPath);
-          console.log('✅ Image uploaded successfully. URL:', imageUrl);
-        } catch (uploadError) {
-          console.error('❌ Error uploading image:', uploadError);
-          return res.status(500).json({
-            message: 'Error uploading image',
-            error: uploadError.message,
-          });
+          console.log('✅ Image uploaded to:', imageUrl);
+        } catch (err) {
+          console.error('❌ Upload error:', err);
+          return res
+            .status(500)
+            .json({ message: 'Upload failed', error: err.message });
         }
       } else {
         console.warn('⚠️ No image file found in request');
@@ -150,12 +156,15 @@ class ProductController {
   static async update(req, res) {
     const { product_id } = req.params;
 
-    const form = new IncomingForm({ multiples: true, keepExtensions: true });
+    const form = new formidable.IncomingForm();
+    form.uploadDir = path.join(__dirname, '../uploads'); // Pastikan folder ini ada
+    form.keepExtensions = true;
 
     form.parse(req, async (err, fields, files) => {
-      if (err) {
-        console.error('❌ Error parsing form:', err);
-        return res.status(400).json({ message: 'Error parsing the files' });
+      if (!files.image) {
+        console.warn('⚠️ No image file found in request');
+      } else {
+        console.log('✅ Image file detected:', files.image);
       }
 
       console.log('✅ Parsed fields:', fields);
@@ -178,14 +187,16 @@ class ProductController {
 
       let imageUrl = null;
 
-      if (files.images) {
-        const file = Array.isArray(files.images)
-          ? files.images[0]
-          : files.images;
-        const oldPath = file.filepath;
+      if (files.image) {
+        const file = Array.isArray(files.image) ? files.image[0] : files.image;
+        const oldPath = file.filepath || file.path;
+        console.log('📁 files.images:', files.image);
+        console.log('📁 file:', file);
+        console.log('📁 oldPath:', oldPath);
 
         if (!oldPath) {
-          return res.status(400).json({ message: 'Image filepath not found' });
+          console.warn('⚠️ No filepath in uploaded file');
+          return res.status(400).json({ message: 'Invalid file upload' });
         }
 
         console.log('🖼️ Uploading image from path:', oldPath);
