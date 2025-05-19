@@ -22,5 +22,6 @@ router.get('/users/:user_id', authenticateAdmin, AdminController.getUserById);
 router.get('/verify', authenticateAdmin, (req, res) => {
   res.status(200).json({ message: 'Token is valid' });
 });
+router.get('/stats', authenticateAdmin, AdminController.getStats);
 
 module.exports = router;

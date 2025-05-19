@@ -22,7 +22,7 @@ class Admin {
     }
   }
 
-  static async findById(username) {
+  static async findByUsername(username) {
     const connection = await mysql.createConnection(dbConfig);
     try {
       const [rows] = await connection.execute(

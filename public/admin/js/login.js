@@ -1,7 +1,4 @@
-document.addEventListener('DOMContentLoaded', async () => {
-  // Check if already logged in
-  await Auth.redirectIfAuthenticated();
-
+document.addEventListener('DOMContentLoaded', () => {
   const loginForm = document.getElementById('loginForm');
   const loginBtn = document.getElementById('loginBtn');
   const loginText = document.getElementById('loginText');
@@ -10,14 +7,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   loginForm.addEventListener('submit', async (e) => {
     e.preventDefault();
+    loginText.classList.add('d-none');
+    loginSpinner.classList.remove('d-none');
+    loginBtn.disabled = true;
 
     const username = document.getElementById('username').value;
     const password = document.getElementById('password').value;
-
-    // Show loading state
-    loginText.textContent = 'Logging in...';
-    loginSpinner.classList.remove('d-none');
-    loginBtn.disabled = true;
 
     try {
       const response = await fetch('/api/admin/login', {
@@ -34,38 +29,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         throw new Error(data.message || 'Login failed');
       }
 
-      // Save token and redirect
-      Auth.setToken(data.token);
+      Auth.saveToken(data.token, 3600);
       window.location.href = '/admin/dashboard';
     } catch (error) {
-      console.error('Login error:', error);
-
-      // Show error message
       errorAlert.textContent = error.message;
       errorAlert.classList.remove('d-none');
-
-      // Hide error message after 5 seconds
-      setTimeout(() => {
-        errorAlert.classList.add('d-none');
-      }, 5000);
+      setTimeout(() => errorAlert.classList.add('d-none'), 3000);
     } finally {
-      // Reset button state
-      loginText.textContent = 'Login';
+      loginText.classList.remove('d-none');
       loginSpinner.classList.add('d-none');
       loginBtn.disabled = false;
     }
-  });
-
-  // Add animation to form elements on load
-  const formElements = loginForm.querySelectorAll('.form-control, .btn');
-  formElements.forEach((el, index) => {
-    el.style.opacity = 0;
-    el.style.transform = 'translateY(20px)';
-    el.style.transition = `all 0.5s ease ${index * 0.1}s`;
-
-    setTimeout(() => {
-      el.style.opacity = 1;
-      el.style.transform = 'translateY(0)';
-    }, 100);
   });
 });

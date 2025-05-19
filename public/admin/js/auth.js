@@ -1,42 +1,28 @@
-class Auth {
-  static isAuthenticated() {
-    const token = localStorage.getItem('adminToken');
-    return token !== null;
-  }
-
-  static getToken() {
-    return localStorage.getItem('adminToken');
-  }
-
-  static setToken(token) {
+const Auth = {
+  saveToken: (token, expiresIn) => {
+    const expiry = Date.now() + expiresIn * 1000;
     localStorage.setItem('adminToken', token);
-  }
+    localStorage.setItem('tokenExpiry', expiry);
+  },
 
-  static removeToken() {
+  getToken: () => localStorage.getItem('adminToken'),
+
+  isAuthenticated: () => {
+    const token = Auth.getToken();
+    const expiry = localStorage.getItem('tokenExpiry');
+    return token && Date.now() < expiry;
+  },
+
+  logout: () => {
     localStorage.removeItem('adminToken');
-  }
+    localStorage.removeItem('tokenExpiry');
+    window.location.href = '/admin/login';
+  },
 
-  static async verifyToken() {
-    const token = this.getToken();
-    if (!token) return false;
-
-    try {
-      const response = await fetch('/api/admin/verify', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      return response.ok;
-    } catch (error) {
-      console.error('Token verification failed:', error);
-      return false;
-    }
-  }
-
-  static async redirectIfAuthenticated() {
-    const isAuthenticated = await this.verifyToken();
-    if (isAuthenticated) {
-      window.location.href = '/admin/dashboard';
-    }
-  }
-}
+  getAdminId: () => {
+    const token = Auth.getToken();
+    if (!token) return null;
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    return payload.adminId;
+  },
+};

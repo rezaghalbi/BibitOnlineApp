@@ -36,13 +36,19 @@ app.use(
           'https://cdnjs.cloudflare.com',
           "'unsafe-inline'",
         ],
+        fontSrc: [
+          "'self'",
+          'https://cdnjs.cloudflare.com',
+          'https://cdn.jsdelivr.net',
+          'data:',
+        ],
         imgSrc: ["'self'", 'data:', 'https://*.imgur.com'],
-        fontSrc: ["'self'", 'https://cdn.jsdelivr.net'],
-        connectSrc: ["'self'"],
+        connectSrc: ["'self'", 'http://localhost:3000'],
       },
     },
   })
 );
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());

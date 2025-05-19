@@ -100,6 +100,14 @@ class Product {
       await connection.end();
     }
   }
+  static async count() {
+    const connection = await mysql.createConnection(dbConfig);
+    const [rows] = await connection.execute(
+      'SELECT COUNT(*) as total FROM products'
+    );
+    await connection.end();
+    return rows[0].total;
+  }
 }
 
 module.exports = Product;

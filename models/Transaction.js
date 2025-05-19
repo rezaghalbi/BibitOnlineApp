@@ -79,6 +79,14 @@ class Transaction {
       await connection.end(); // Menutup koneksi
     }
   }
+  static async countToday() {
+    const connection = await mysql.createConnection(dbConfig);
+    const [rows] = await connection.execute(
+      `SELECT COUNT(*) as total FROM transactions WHERE created_at >= CURDATE()`
+    );
+    await connection.end();
+    return rows[0].total;
+  }
 }
 
 module.exports = Transaction;

@@ -12,7 +12,7 @@ function authenticateAdmin(req, res, next) {
     if (err) {
       return res.sendStatus(403); // Forbidden
     }
-    req.adminId = admin.adminId; // Simpan adminId di request
+    req.adminId = admin.admin_id; // Simpan adminId di request
     next();
   });
 }

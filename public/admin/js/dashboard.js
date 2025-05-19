@@ -1,188 +1,88 @@
 document.addEventListener('DOMContentLoaded', async () => {
-  // Load partials
-  await loadPartials();
-
-  // Check authentication
   if (!Auth.isAuthenticated()) {
     window.location.href = '/admin/login';
     return;
   }
 
-  // Set admin username
-  const token = Auth.getToken();
-  const decoded = jwt_decode(token);
-  document.getElementById('adminUsername').textContent =
-    decoded.username || 'Admin';
-
-  // Load dashboard stats
-  await loadDashboardStats();
-
-  // Load recent transactions
-  await loadRecentTransactions();
-
-  // Setup event listeners
+  await loadPartials();
+  await loadDashboardData();
   setupEventListeners();
-
-  // Initialize chart
-  initChart();
 });
 
 async function loadPartials() {
   try {
-    const header = await fetch('partials/header.html').then((res) =>
-      res.text()
-    );
-    const sidebar = await fetch('partials/sidebar.html').then((res) =>
-      res.text()
-    );
-    const footer = await fetch('partials/footer.html').then((res) =>
-      res.text()
-    );
+    const [header, footer] = await Promise.all([
+      fetch('/admin/partials/header.html').then((res) => res.text()),
+      fetch('/admin/partials/footer.html').then((res) => res.text()),
+    ]);
 
     document.getElementById('header-container').innerHTML = header;
-    document.getElementById('sidebar-container').innerHTML = sidebar;
     document.getElementById('footer-container').innerHTML = footer;
+
+    document.getElementById('adminName').textContent = Auth.getAdminId();
   } catch (error) {
     console.error('Error loading partials:', error);
   }
 }
 
-async function loadDashboardStats() {
+async function loadDashboardData() {
   try {
-    const token = Auth.getToken();
+    console.log('Loading dashboard data...');
+    const token = localStorage.getItem('adminToken');
+    if (!token) throw new Error('No authentication token found');
 
-    const [usersRes, productsRes, transactionsRes] = await Promise.all([
-      fetch('/api/users/count', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }),
-      fetch('/api/products/count', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }),
-      fetch('/api/transactions/count', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }),
-    ]);
-
-    const usersCount = await usersRes.json();
-    const productsCount = await productsRes.json();
-    const transactionsCount = await transactionsRes.json();
-
-    document.getElementById('totalUsers').textContent = usersCount.total || 0;
-    document.getElementById('totalProducts').textContent =
-      productsCount.total || 0;
-    document.getElementById('totalTransactions').textContent =
-      transactionsCount.total || 0;
-  } catch (error) {
-    console.error('Error loading dashboard stats:', error);
-  }
-}
-
-async function loadRecentTransactions() {
-  try {
-    const token = Auth.getToken();
-    const response = await fetch('/api/transactions/recent', {
+    const response = await fetch('/api/admin/stats', {
       headers: {
         Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
       },
     });
 
-    const transactions = await response.json();
-    const tbody = document.getElementById('recentTransactions');
-    tbody.innerHTML = '';
+    console.log('API response status:', response.status);
 
-    transactions.forEach((transaction) => {
-      const tr = document.createElement('tr');
-      tr.className = 'fade-in';
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.error('API error response:', errorData);
+      throw new Error(errorData.message || 'Failed to fetch stats');
+    }
 
-      let statusClass = '';
-      switch (transaction.status) {
-        case 'completed':
-          statusClass = 'badge-success';
-          break;
-        case 'pending':
-          statusClass = 'badge-warning';
-          break;
-        case 'failed':
-          statusClass = 'badge-danger';
-          break;
-        default:
-          statusClass = 'badge-secondary';
-      }
+    const result = await response.json();
+    console.log('API success response:', result);
 
-      tr.innerHTML = `
-                <td>${transaction.id}</td>
-                <td>${transaction.user_name || 'N/A'}</td>
-                <td>$${transaction.amount.toFixed(2)}</td>
-                <td><span class="badge ${statusClass}">${
-        transaction.status
-      }</span></td>
-                <td>${new Date(
-                  transaction.created_at
-                ).toLocaleDateString()}</td>
-            `;
-
-      tbody.appendChild(tr);
-    });
+    // Update UI
+    document.getElementById('totalProducts').textContent = result.data.products;
+    document.getElementById('totalTransactions').textContent =
+      result.data.transactions;
+    document.getElementById('totalUsers').textContent = result.data.users;
   } catch (error) {
-    console.error('Error loading recent transactions:', error);
+    console.error('Dashboard error:', error);
+    showError(`Gagal memuat data: ${error.message}`);
   }
+}
+
+function showError(message) {
+  const errorDiv = document.createElement('div');
+  errorDiv.className = 'alert alert-danger alert-dismissible fade show';
+  errorDiv.innerHTML = `
+    ${message}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  `;
+  document.querySelector('main').prepend(errorDiv);
 }
 
 function setupEventListeners() {
-  // Sidebar toggle
-  document.getElementById('sidebarToggle').addEventListener('click', () => {
-    document.getElementById('sidebar').classList.toggle('active');
-    document.querySelector('.main-content').classList.toggle('active');
-  });
+  document.getElementById('logoutBtn').addEventListener('click', Auth.logout);
 
-  // Logout button
-  document.getElementById('logoutBtn').addEventListener('click', () => {
-    Auth.removeToken();
-    window.location.href = '/admin/login';
-  });
-}
-
-function initChart() {
-  const ctx = document.createElement('canvas');
-  ctx.id = 'dashboardChart';
-  document.querySelector('.card-body').prepend(ctx);
-
-  new Chart(ctx, {
-    type: 'line',
-    data: {
-      labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-      datasets: [
-        {
-          label: 'Transactions',
-          data: [12, 19, 3, 5, 2, 3],
-          backgroundColor: 'rgba(78, 115, 223, 0.05)',
-          borderColor: 'rgba(78, 115, 223, 1)',
-          borderWidth: 2,
-          pointBackgroundColor: 'rgba(78, 115, 223, 1)',
-          pointRadius: 3,
-          pointHoverRadius: 5,
-          fill: true,
-        },
-      ],
-    },
-    options: {
-      maintainAspectRatio: false,
-      plugins: {
-        legend: {
-          display: false,
-        },
-      },
-      scales: {
-        y: {
-          beginAtZero: true,
-        },
-      },
-    },
+  // Animasi hover untuk action cards
+  const actionCards = document.querySelectorAll('.action-card');
+  actionCards.forEach((card) => {
+    card.addEventListener('mouseenter', () => {
+      const icon = card.querySelector('i');
+      icon.style.transform = 'scale(1.1)';
+    });
+    card.addEventListener('mouseleave', () => {
+      const icon = card.querySelector('i');
+      icon.style.transform = 'scale(1)';
+    });
   });
 }

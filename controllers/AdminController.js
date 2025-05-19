@@ -1,7 +1,11 @@
 const Admin = require('../models/Admin');
 const User = require('../models/User');
+const Product = require('../models/Product');
+const Transaction = require('../models/Transaction');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const mysql = require('mysql2/promise');
+const dbConfig = require('../config/dbConfig');
 
 class AdminController {
   // Metode untuk registrasi admin
@@ -37,8 +41,7 @@ class AdminController {
     const { username, password } = req.body;
 
     try {
-      const admin = await Admin.findById(username);
-
+      const admin = await Admin.findByUsername(username);
       if (!admin) {
         return res.status(404).json({ message: 'Admin not found' });
       }
@@ -50,17 +53,22 @@ class AdminController {
 
       const token = jwt.sign(
         { adminId: admin.admin_id },
-        process.env.JWT_SECRET,
+        process.env.ADMIN_JWT_SECRET,
         { expiresIn: '1h' }
       );
 
-      res.status(200).json({ message: 'Admin login successful', token });
+      res.json({ token });
     } catch (error) {
-      console.error('Error logging in admin:', error);
-      res.status(500).json({
-        message: 'Error logging in admin',
-        error: error.message || error,
-      });
+      res.status(500).json({ message: 'Server error' });
+    }
+  }
+
+  static async getRecentTransactions(req, res) {
+    try {
+      const transactions = await Transaction.findRecent(5);
+      res.json(transactions);
+    } catch (error) {
+      res.status(500).json({ message: 'Server error' });
     }
   }
 
@@ -113,6 +121,48 @@ class AdminController {
         message: 'Error fetching user',
         error: error.message || error,
       });
+    }
+  }
+  static async getStats(req, res) {
+    let connection;
+    try {
+      connection = await mysql.createConnection(dbConfig);
+
+      // Debugging: Log queries sebelum eksekusi
+      console.log('Executing stats queries...');
+
+      const [productsResult] = await connection.execute(
+        'SELECT COUNT(*) as total FROM products'
+      );
+      const [transactionsResult] = await connection.execute(
+        `SELECT COUNT(*) as total FROM transactions `
+      );
+      const [usersResult] = await connection.execute(
+        'SELECT COUNT(*) as total FROM users'
+      );
+
+      // Debugging: Log hasil query
+      console.log('Products count:', productsResult[0].total);
+      console.log('Transactions count:', transactionsResult[0].total);
+      console.log('Users count:', usersResult[0].total);
+
+      res.json({
+        success: true,
+        data: {
+          products: productsResult[0].total,
+          transactions: transactionsResult[0].total,
+          users: usersResult[0].total,
+        },
+      });
+    } catch (error) {
+      console.error('Error in getStats:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to get statistics',
+        error: error.message,
+      });
+    } finally {
+      if (connection) await connection.end();
     }
   }
 }
