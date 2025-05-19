@@ -108,6 +108,18 @@ class Product {
     await connection.end();
     return rows[0].total;
   }
+  static async search(keyword) {
+    const connection = await mysql.createConnection(dbConfig);
+    try {
+      const [rows] = await connection.execute(
+        `SELECT * FROM products WHERE nama_produk LIKE ? OR deskripsi LIKE ?`,
+        [`%${keyword}%`, `%${keyword}%`]
+      );
+      return rows;
+    } finally {
+      await connection.end();
+    }
+  }
 }
 
 module.exports = Product;

@@ -1,18 +1,23 @@
 const jwt = require('jsonwebtoken');
 
 function authenticateAdmin(req, res, next) {
-  const token =
-    req.headers['authorization'] && req.headers['authorization'].split(' ')[1];
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
 
   if (!token) {
-    return res.sendStatus(401); // Unauthorized
+    return res
+      .status(401)
+      .json({ message: 'Akses ditolak. Token tidak ditemukan.' });
   }
 
-  jwt.verify(token, process.env.ADMIN_JWT_SECRET, (err, admin) => {
+  // Perbaikan: ganti docode -> decoded
+  jwt.verify(token, process.env.ADMIN_JWT_SECRET, (err, decoded) => {
     if (err) {
-      return res.sendStatus(403); // Forbidden
+      console.error('Error verifikasi token:', err.message);
+      return res.status(403).json({ message: 'Token tidak valid' });
     }
-    req.adminId = admin.admin_id; // Simpan adminId di request
+    console.log('Decoded token:', decoded);
+    req.adminId = decoded.adminId; // Gunakan decoded bukan docode
     next();
   });
 }

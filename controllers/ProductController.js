@@ -267,6 +267,20 @@ class ProductController {
       });
     }
   }
+
+  static async search(req, res) {
+    try {
+      const { keyword } = req.query;
+      if (!keyword) {
+        return res.status(400).json({ message: 'Keyword is required' });
+      }
+
+      const products = await Product.search(keyword);
+      res.status(200).json(products);
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  }
 }
 
 module.exports = ProductController;
