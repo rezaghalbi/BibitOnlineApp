@@ -19,7 +19,7 @@ async function loadPartials() {
     document.getElementById('header-container').innerHTML = header;
     document.getElementById('footer-container').innerHTML = footer;
 
-    document.getElementById('adminName').textContent = Auth.getAdminId();
+    // document.getElementById('adminName').textContent = Auth.getAdminName();
   } catch (error) {
     console.error('Error loading partials:', error);
   }

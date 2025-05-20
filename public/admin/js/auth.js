@@ -1,28 +1,28 @@
+// File: public/admin/js/auth.js
 const Auth = {
-  saveToken: (token, expiresIn) => {
-    const expiry = Date.now() + expiresIn * 1000;
+  saveToken: function (token) {
     localStorage.setItem('adminToken', token);
-    localStorage.setItem('tokenExpiry', expiry);
   },
 
-  getToken: () => localStorage.getItem('adminToken'),
-
-  isAuthenticated: () => {
-    const token = Auth.getToken();
-    const expiry = localStorage.getItem('tokenExpiry');
-    return token && Date.now() < expiry;
+  getToken: function () {
+    return localStorage.getItem('adminToken');
   },
 
-  logout: () => {
+  isAuthenticated: function () {
+    return !!this.getToken();
+  },
+
+  logout: function () {
     localStorage.removeItem('adminToken');
-    localStorage.removeItem('tokenExpiry');
     window.location.href = '/admin/login';
   },
 
-  getAdminId: () => {
-    const token = Auth.getToken();
-    if (!token) return null;
-    const payload = JSON.parse(atob(token.split('.')[1]));
-    return payload.adminId;
+  debug: function () {
+    console.log('Auth Status:', {
+      token: this.getToken(),
+      isAuthenticated: this.isAuthenticated(),
+    });
   },
 };
+
+window.Auth = Auth;

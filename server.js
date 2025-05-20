@@ -54,6 +54,19 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
+app.use(
+  '/css',
+  express.static(
+    path.join(__dirname, 'node_modules/@fortawesome/fontawesome-free/css')
+  )
+);
+app.use(
+  '/webfonts',
+  express.static(
+    path.join(__dirname, 'node_modules/@fortawesome/fontawesome-free/webfonts')
+  )
+);
+
 app.use('/api/users', userRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/products', productRoutes);

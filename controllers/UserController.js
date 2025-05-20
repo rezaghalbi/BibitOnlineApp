@@ -1,6 +1,8 @@
 const User = require('../models/User');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const mysql = require('mysql2/promise');
+const dbConfig = require('../config/dbConfig');
 
 class UserController {
   // Metode untuk registrasi pengguna
@@ -88,6 +90,86 @@ class UserController {
         message: 'Error updating profile',
         error: error.message || error,
       });
+    }
+  }
+  static async getAllUsers(req, res) {
+    try {
+      const { search, sortBy, order } = req.query;
+
+      let query = 'SELECT * FROM users';
+      const params = [];
+
+      // Handle search
+      if (search) {
+        query +=
+          ' WHERE username LIKE ? OR nama_lengkap LIKE ? OR email LIKE ?';
+        params.push(`%${search}%`, `%${search}%`, `%${search}%`);
+      }
+
+      // Handle sorting
+      if (
+        sortBy &&
+        ['username', 'nama_lengkap', 'created_at'].includes(sortBy)
+      ) {
+        const sortOrder = order === 'desc' ? 'DESC' : 'ASC';
+        query += ` ORDER BY ${sortBy} ${sortOrder}`;
+      }
+
+      const connection = await mysql.createConnection(dbConfig);
+      const [users] = await connection.execute(query, params);
+      await connection.end();
+
+      res.status(200).json(users);
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  }
+
+  // Update user
+  static async updateUser(req, res) {
+    const { user_id } = req.params;
+    try {
+      const user = await User.findById(user_id);
+      if (!user) {
+        return res.status(404).json({ message: 'User tidak ditemukan' });
+      }
+
+      const updatedUser = await User.update(user_id, req.body);
+      res.status(200).json({
+        message: 'User berhasil diperbarui',
+        user: updatedUser,
+      });
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  }
+
+  // Delete user
+  static async deleteUser(req, res) {
+    const { user_id } = req.params;
+    try {
+      const result = await User.deleteById(user_id);
+      if (result.affectedRows === 0) {
+        return res.status(404).json({ message: 'User tidak ditemukan' });
+      }
+      res.status(200).json({ message: 'User berhasil dihapus' });
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  }
+  // Di UserController tambahkan method ini
+  static async getUserById(req, res) {
+    try {
+      const { user_id } = req.params;
+      const user = await User.findById(user_id);
+
+      if (!user) {
+        return res.status(404).json({ message: 'User tidak ditemukan' });
+      }
+
+      res.status(200).json(user);
+    } catch (error) {
+      res.status(500).json({ message: error.message });
     }
   }
 }

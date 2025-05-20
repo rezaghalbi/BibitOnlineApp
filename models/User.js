@@ -24,12 +24,12 @@ class User {
     }
   }
 
-  static async findById(username) {
+  static async findById(user_id) {
     const connection = await mysql.createConnection(dbConfig);
     try {
       const [rows] = await connection.execute(
-        'SELECT * FROM users WHERE username = ?',
-        [username]
+        'SELECT * FROM users WHERE user_id = ?',
+        [user_id]
       );
       return rows[0];
     } catch (error) {
@@ -61,13 +61,21 @@ class User {
     }
   }
 
-  static async findAll() {
+  static async findAll(search = '', sortBy = 'username', order = 'ASC') {
     const connection = await mysql.createConnection(dbConfig);
     try {
-      const [rows] = await connection.execute('SELECT * FROM users');
+      let query = `SELECT * FROM users`;
+      const params = [];
+
+      if (search) {
+        query += ` WHERE username LIKE ? OR nama_lengkap LIKE ? OR email LIKE ?`;
+        params.push(`%${search}%`, `%${search}%`, `%${search}%`);
+      }
+
+      query += ` ORDER BY ${sortBy} ${order}`;
+
+      const [rows] = await connection.execute(query, params);
       return rows;
-    } catch (error) {
-      throw error;
     } finally {
       await connection.end();
     }
