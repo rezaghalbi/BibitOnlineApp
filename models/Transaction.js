@@ -16,7 +16,7 @@ class Transaction {
           transactionData.gross_amount || 0,
           transactionData.item_details || '[]',
           transactionData.payment_status || 'pending',
-          // transactionData.shipping_address || null,
+          transactionData.shipping_address || null,
         ]
       );
       return result.insertId;
@@ -99,18 +99,6 @@ class Transaction {
     await connection.end();
     return rows[0].total;
   }
-  static async updateByOrderId(orderId, status) {
-    const connection = await mysql.createConnection(dbConfig);
-    try {
-      const [result] = await connection.execute(
-        'UPDATE transactions SET status = ? WHERE order_id = ?',
-        [status, orderId]
-      );
-      return result;
-    } finally {
-      await connection.end();
-    }
-  }
 
   static async findByOrderId(orderId) {
     const connection = await mysql.createConnection(dbConfig);
@@ -136,6 +124,85 @@ class Transaction {
       }
     } finally {
       await connection.end();
+    }
+  }
+  static async getFilteredTransactions({ search, status, sort }) {
+    const connection = await mysql.createConnection(dbConfig);
+    try {
+      let query = `
+      SELECT 
+        t.*, 
+        u.nama_lengkap AS customer_name 
+      FROM transactions t
+      JOIN users u ON t.user_id = u.user_id
+      WHERE 1=1
+    `;
+
+      const params = [];
+
+      // Filter pencarian nama
+      if (search) {
+        query += ' AND u.nama_lengkap LIKE ?';
+        params.push(`%${search}%`);
+      }
+
+      // Filter status
+      if (status && status !== 'all') {
+        query += ' AND t.payment_status = ?';
+        params.push(status);
+      }
+
+      // Sorting
+      if (sort === 'terbaru') {
+        query += ' ORDER BY t.created_at DESC';
+      } else if (sort === 'terlama') {
+        query += ' ORDER BY t.created_at ASC';
+      }
+
+      const [rows] = await connection.execute(query, params);
+      return rows.map((row) => ({
+        ...row,
+        item_details: JSON.parse(row.item_details),
+      }));
+    } finally {
+      await connection.end();
+    }
+  }
+  // Di model Transaction
+  static async updateByOrderId(orderId, updateData) {
+    const connection = await mysql.createConnection(dbConfig); // Tambahkan koneksi
+    try {
+      // Validasi status
+      const allowedStatus = [
+        'pending',
+        'settlement',
+        'capture',
+        'deny',
+        'cancel',
+        'expire',
+        'refund',
+      ];
+      if (!allowedStatus.includes(updateData.payment_status)) {
+        throw new Error('Status pembayaran tidak valid');
+      }
+
+      // Update database
+      const [result] = await connection.execute(
+        `UPDATE transactions SET 
+          payment_status = ?,
+          payment_method = ?,
+          transaction_time = ?
+          WHERE order_id = ?`,
+        [
+          updateData.payment_status,
+          updateData.payment_method,
+          updateData.transaction_time,
+          orderId,
+        ]
+      );
+      return result;
+    } finally {
+      await connection.end(); // Tutup koneksi
     }
   }
 }

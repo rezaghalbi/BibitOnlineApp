@@ -16,7 +16,12 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 // CORS Configuration
 const corsOptions = {
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin: [
+    process.env.FRONTEND_URL,
+    'http://localhost:3000',
+    'https://b758-202-46-151-37.ngrok-free.app', // Izinkan semua subdomain ngrok
+  ],
+
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true,
@@ -54,6 +59,7 @@ app.use(
         connectSrc: [
           "'self'",
           'http://localhost:3000',
+          'https://78ba-202-46-151-37.ngrok-free.app',
           'https://api.sandbox.midtrans.com',
           'https://app.sandbox.midtrans.com',
         ],
@@ -137,6 +143,10 @@ app.use(
 );
 
 // User Pages
+// Di server.js tambahkan route untuk transaction page
+app.get('/transactions', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public/user/html/transaction.html'));
+});
 app.get('/login', (req, res) => {
   res.sendFile(path.join(__dirname, 'public/user/html/login.html'));
 });

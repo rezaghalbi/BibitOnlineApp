@@ -8,14 +8,23 @@ const router = express.Router();
 // Rute untuk membuat transaksi
 router.post('/', authenticateUser, TransactionController.create);
 
-// Rute untuk melihat semua transaksi berdasarkan user_id
-router.get(
-  '/transaksi',
-  authenticateUser,
-  TransactionController.getAllByUserId
-);
+// routes/transactionRoutes.js
 
-router.get('/getall', authenticateAdmin, TransactionController.getAll);
+// Endpoint admin (tambahkan query params)
+router.get('/admin', authenticateAdmin, TransactionController.getAll);
+
+// Endpoint user (tambahkan query params)
+router.get('/user', authenticateUser, TransactionController.getAllByUserId);
+router.get(
+  '/:orderId',
+  authenticateUser,
+  TransactionController.getTransactionDetail
+);
+router.get(
+  '/:orderId/token',
+  authenticateUser,
+  TransactionController.getSnapToken
+);
 
 router.put(
   '/:transaction_id/status',
@@ -39,8 +48,11 @@ router.get('/recent', authenticateAdmin, async (req, res) => {
   }
 });
 
-
-// routes/transactionRoutes.js
-router.post('/notification', TransactionController.handleNotification);
+// File: routes/transactionRoutes.js
+router.post(
+  '/notification',
+  express.json({ type: 'application/json' }),
+  TransactionController.handleNotification
+);
 
 module.exports = router;

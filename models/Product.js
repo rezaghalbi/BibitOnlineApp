@@ -128,6 +128,20 @@ class Product {
       throw new Error('Stok tidak mencukupi');
     }
   }
+  static async updateStock(productId, quantity) {
+    const connection = await mysql.createConnection(dbConfig);
+    try {
+      const [result] = await connection.execute(
+        `UPDATE products 
+          SET stok = stok - ? 
+          WHERE product_id = ?`,
+        [quantity, productId]
+      );
+      return result;
+    } finally {
+      await connection.end();
+    }
+  }
 }
 
 module.exports = Product;

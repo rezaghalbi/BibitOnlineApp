@@ -1,6 +1,8 @@
 const Transaction = require('../models/Transaction');
 const Cart = require('../models/Cart');
 const MidtransService = require('../services/midtransService');
+const Product = require('../models/Product');
+const midtransClient = require('midtrans-client'); // <-- Tambahkan ini di paling atas
 
 class TransactionController {
   // Metode untuk membuat transaksi
@@ -64,30 +66,49 @@ class TransactionController {
   }
 
   // Metode untuk melihat semua transaksi berdasarkan user_id
+  // Metode untuk user (getAllByUserId) - Tambah filter
   static async getAllByUserId(req, res) {
-    const user_id = req.userId; // Ambil userId dari token JWT
-
     try {
-      const transactions = await Transaction.findAllByUserId(user_id);
-      res.status(200).json(transactions);
+      const { status = 'all', sort = 'terbaru' } = req.query;
+      const user_id = req.userId;
+
+      const transactions = await Transaction.getFilteredTransactions({
+        user_id,
+        status,
+        sort,
+      });
+
+      res.status(200).json({
+        status: 'success',
+        data: transactions,
+      });
     } catch (error) {
-      console.error('Error fetching transactions:', error);
       res.status(500).json({
-        message: 'Error fetching transactions',
-        error: error.message || error,
+        status: 'error',
+        message: 'Gagal mengambil transaksi',
       });
     }
   }
   // Metode untuk melihat semua transaksi (admin)
   static async getAll(req, res) {
     try {
-      const transactions = await Transaction.findAll(); // Ambil semua transaksi
-      res.status(200).json(transactions);
+      const { search = '', status = 'all', sort = 'terbaru' } = req.query;
+
+      const transactions = await Transaction.getFilteredTransactions({
+        search,
+        status,
+        sort,
+      });
+
+      res.status(200).json({
+        status: 'success',
+        data: transactions,
+      });
     } catch (error) {
-      console.error('Error fetching all transactions:', error);
+      console.error('Error:', error);
       res.status(500).json({
-        message: 'Error fetching all transactions',
-        error: error.message || error,
+        status: 'error',
+        message: 'Gagal mengambil data transaksi',
       });
     }
   }
@@ -121,20 +142,118 @@ class TransactionController {
   }
   static async handleNotification(req, res) {
     try {
-      const notif = req.body;
-      const core = new midtransClient.Core({
+      const notification = req.body;
+
+      // Inisialisasi Core API
+      const coreApi = new midtransClient.CoreApi({
         isProduction: process.env.MIDTRANS_ENV === 'production',
         serverKey: process.env.MIDTRANS_SERVER_KEY,
-        clientKey: process.env.MIDTRANS_CLIENT_KEY,
       });
 
-      const status = await core.transaction.notification(notif);
-      await Transaction.updateStatus(status.order_id, status);
+      // Dapatkan status terbaru
+      const status = await coreApi.transaction.status(notification.order_id);
+
+      // Update transaksi
+      await Transaction.updateByOrderId(status.order_id, {
+        payment_status: status.transaction_status,
+        payment_method: status.payment_type,
+        transaction_time: status.transaction_time,
+      });
+      // Jika pembayaran 'deny','cancel','expire','refund'
+      if (
+        status.transaction_status === 'deny' ||
+        status.transaction_status === 'cancel' ||
+        status.transaction_status === 'expire' ||
+        status.transaction_status === 'refund'
+      ) {
+        // update status transaksi di database
+        await Transaction.updateByOrderId(status.order_id, {
+          payment_status: status.transaction_status,
+
+          transaction_time: status.transaction_time,
+        });
+      }
+
+      // Jika pembayaran sukses
+      if (status.transaction_status === 'settlement') {
+        const transaction = await Transaction.findByOrderId(status.order_id);
+        const items = JSON.parse(transaction.item_details);
+
+        for (const item of items) {
+          await Product.updateStock(item.id, item.quantity);
+        }
+      }
 
       res.status(200).send('OK');
     } catch (error) {
-      console.error('Notification error:', error);
-      res.status(500).json({ error: error.message });
+      console.error('Notification error:', {
+        error: error.message,
+        stack: error.stack,
+        notification: req.body,
+      });
+      res.status(500).json({
+        error: 'Gagal memproses notifikasi',
+        details: error.message,
+      });
+    }
+  }
+  static async getSnapToken(req, res) {
+    try {
+      const { orderId } = req.params;
+      const transaction = await Transaction.findByOrderId(orderId);
+
+      if (!transaction) {
+        return res.status(404).json({ message: 'Transaksi tidak ditemukan' });
+      }
+
+      if (transaction.payment_status !== 'pending') {
+        return res.status(400).json({ message: 'Transaksi sudah diproses' });
+      }
+
+      res.json({
+        token: transaction.snap_token,
+        redirect_url: transaction.redirect_url,
+      });
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  }
+  static async getTransactionDetail(req, res) {
+    try {
+      const { orderId } = req.params;
+      const transaction = await Transaction.findByOrderId(orderId);
+
+      if (!transaction) {
+        return res.status(404).json({ message: 'Transaksi tidak ditemukan' });
+      }
+
+      res.json({
+        status: 'success',
+        data: {
+          ...transaction,
+          item_details: JSON.parse(transaction.item_details),
+        },
+      });
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  }
+  // get transaction by user id
+  static async getTransactionByUserId(req, res) {
+    try {
+      const user_id = req.userId;
+      const transactions = await Transaction.findAllByUserId(user_id);
+
+      if (!transactions) {
+        return res.status(404).json({ message: 'Transaksi tidak ditemukan' });
+      }
+
+      res.json({
+        status: 'success',
+        data: transactions,
+      });
+    } catch (error) {
+      res.status(500).json({ message: error.message });
     }
   }
 }
