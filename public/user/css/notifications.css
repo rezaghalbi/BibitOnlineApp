@@ -1,0 +1,22 @@
+/* Notifikasi Global */
+.swal2-popup {
+  font-family: 'Poppins', sans-serif !important;
+  border-radius: 12px !important;
+}
+
+.swal2-title {
+  font-size: 1.5rem !important;
+}
+
+.swal2-confirm {
+  padding: 10px 25px !important;
+  border-radius: 8px !important;
+  transition: all 0.3s ease !important;
+}
+
+.toastify-notification {
+  font-family: 'Poppins', sans-serif;
+  font-size: 14px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}

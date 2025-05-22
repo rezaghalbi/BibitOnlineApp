@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Keranjang Belanja</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/user/css/cart.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css"
+    />
+    <link rel="stylesheet" href="/user/css/navbar.css" />
+    <link rel="stylesheet" href="/user/css/notifications.css" />
+  </head>
+  <body class="bg-light">
+    <!-- Navbar -->
+
+    <main class="container my-5">
+      <h1 class="mb-4">🛒 Keranjang Belanja</h1>
+
+      <div id="cartItems" class="mb-4">
+        <!-- Item keranjang akan dimuat di sini -->
+      </div>
+
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <div class="row justify-content-between align-items-center">
+            <div class="col-md-6">
+              <h4 class="mb-0">Total Belanja:</h4>
+            </div>
+            <div class="col-md-6 text-end">
+              <h3 class="text-primary mb-0" id="totalPrice">Rp 0</h3>
+            </div>
+          </div>
+
+          <div class="d-grid gap-3 mt-4">
+            <button class="btn btn-primary btn-lg" id="checkoutBtn">
+              <i class="fas fa-credit-card me-2"></i>Checkout Sekarang
+            </button>
+            <a href="/products" class="btn btn-outline-secondary btn-lg">
+              <i class="fas fa-arrow-left me-2"></i>Lanjutkan Belanja
+            </a>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Modal Edit Jumlah -->
+    <div class="modal fade" id="editModal" tabindex="-1">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Edit Jumlah</h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <input
+              type="number"
+              id="editQuantity"
+              class="form-control"
+              min="1"
+            />
+            <small class="text-muted"
+              >Stok tersedia: <span id="maxStock"></span
+            ></small>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-bs-dismiss="modal"
+            >
+              Batal
+            </button>
+            <button type="button" class="btn btn-primary" id="saveQuantity">
+              Simpan
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal fade" id="paymentModal" tabindex="-1">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Pembayaran</h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <div id="snap-container"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/user/js/navbar-loader.js"></script>
+    <script src="/user/js/cart.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+    <script
+      type="text/javascript"
+      src="https://app.sandbox.midtrans.com/snap/snap.js"
+      data-client-key="<MIDTRANS_CLIENT_KEY>"
+    ></script>
+    <!-- <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css"
+    /> -->
+  </body>
+</html>

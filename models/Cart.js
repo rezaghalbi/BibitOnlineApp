@@ -10,8 +10,19 @@ class Cart {
         [cartData.user_id, cartData.product_id, cartData.jumlah]
       );
       return result.insertId;
-    } catch (error) {
-      throw error;
+    } finally {
+      await connection.end();
+    }
+  }
+
+  static async deleteFromCart(cart_id, user_id) {
+    const connection = await mysql.createConnection(dbConfig);
+    try {
+      const [result] = await connection.execute(
+        'DELETE FROM cart WHERE cart_id = ? AND user_id = ?',
+        [cart_id, user_id]
+      );
+      return result;
     } finally {
       await connection.end();
     }
@@ -21,26 +32,55 @@ class Cart {
     const connection = await mysql.createConnection(dbConfig);
     try {
       const [rows] = await connection.execute(
-        'SELECT c.cart_id, c.jumlah, p.nama_produk, p.harga FROM cart c JOIN products p ON c.product_id = p.product_id WHERE c.user_id = ?',
+        `SELECT 
+          c.cart_id, 
+          c.product_id,
+          c.jumlah,
+          p.nama_produk,
+          p.harga,
+          p.image_url
+        FROM cart c
+        JOIN products p ON c.product_id = p.product_id
+        WHERE c.user_id = ? AND c.is_checkedout = 0`,
         [user_id]
       );
       return rows;
-    } catch (error) {
-      throw error;
     } finally {
       await connection.end();
     }
   }
 
-  static async deleteFromCart(cart_id) {
+  static async updateQuantity(cart_id, user_id, jumlah) {
     const connection = await mysql.createConnection(dbConfig);
     try {
       const [result] = await connection.execute(
-        'DELETE FROM cart WHERE cart_id = ?',
-        [cart_id]
+        `UPDATE cart 
+        SET jumlah = ?
+        WHERE cart_id = ? AND user_id = ?`,
+        [jumlah, cart_id, user_id]
+      );
+      return result.affectedRows;
+    } finally {
+      await connection.end();
+    }
+  }
+  static async updateCheckoutStatus(user_id, snap_token) {
+    const connection = await mysql.createConnection(dbConfig);
+    try {
+      // Validasi parameter
+      if (!user_id || !snap_token) {
+        throw new Error('Parameter tidak valid untuk updateCheckoutStatus');
+      }
+
+      console.log('Params:', [snap_token, user_id]); // Debugging
+
+      const [result] = await connection.execute(
+        'UPDATE cart SET is_checkedout = 1, snap_token = ? WHERE user_id = ?',
+        [snap_token, user_id]
       );
       return result;
     } catch (error) {
+      console.error('Error di updateCheckoutStatus:', error);
       throw error;
     } finally {
       await connection.end();

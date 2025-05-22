@@ -9,10 +9,11 @@ const cors = require('cors');
 const helmet = require('helmet');
 
 require('dotenv').config();
-require('dotenv').config();
 
 // Database Connection
 const app = express();
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 // CORS Configuration
 const corsOptions = {
   origin: process.env.FRONTEND_URL || 'http://localhost:3000',
@@ -29,7 +30,14 @@ app.use(
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'"],
-        scriptSrc: ["'self'", 'https://cdn.jsdelivr.net'],
+        scriptSrc: [
+          "'self'",
+          'https://cdn.jsdelivr.net',
+          "'sha256-CKrS9iGlM2wpO8Hc1jwBzALK4aP6OcdVdPgo9yDXMXA='",
+          'https://app.sandbox.midtrans.com',
+          "'unsafe-inline'",
+          "'unsafe-eval'",
+        ],
         styleSrc: [
           "'self'",
           'https://cdn.jsdelivr.net',
@@ -43,15 +51,18 @@ app.use(
           'data:',
         ],
         imgSrc: ["'self'", 'data:', 'https://*.imgur.com'],
-        connectSrc: ["'self'", 'http://localhost:3000'],
+        connectSrc: [
+          "'self'",
+          'http://localhost:3000',
+          'https://api.sandbox.midtrans.com',
+          'https://app.sandbox.midtrans.com',
+        ],
+        frameSrc: ['https://app.sandbox.midtrans.com'],
       },
     },
   })
 );
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use(
@@ -82,6 +93,34 @@ app.use(
     },
   })
 );
+// Konfigurasi khusus untuk folder user
+// Konfigurasi static files
+app.use(
+  '/user/css',
+  express.static(path.join(__dirname, 'public/user/css'), {
+    setHeaders: (res) => {
+      res.set('Content-Type', 'text/css');
+    },
+  })
+);
+
+app.use(
+  '/user/js',
+  express.static(path.join(__dirname, 'public/user/js'), {
+    setHeaders: (res) => {
+      res.set('Content-Type', 'application/javascript');
+    },
+  })
+);
+// Konfigurasi static files
+app.use(
+  '/user/partials',
+  express.static(path.join(__dirname, 'public/user/partials'), {
+    setHeaders: (res) => {
+      res.set('Content-Type', 'text/html');
+    },
+  })
+);
 
 // Admin Pages
 app.get('/admin/login', (req, res) => {
@@ -92,13 +131,47 @@ app.get('/admin/dashboard', (req, res) => {
   res.sendFile(path.join(__dirname, 'public/admin/dashboard.html'));
 });
 
+app.use(
+  '/user/images',
+  express.static(path.join(__dirname, 'public/user/images'))
+);
+
+// User Pages
+app.get('/login', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public/user/html/login.html'));
+});
+
+app.get('/register', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public/user/html/register.html'));
+});
+
+app.get('/profile', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public/user/html/profile.html'));
+});
+
+app.get('/cart', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public/user/html/cart.html'));
+});
+
+app.get('/product-detail.html', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public/user/html/product-detail.html'));
+});
+
+// Products Route
+app.get('/products', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public/user/html/products.html'));
+});
+
+// Halaman utama user
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public/user/html/index.html'));
+});
+
 // Server Startup
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
   console.log(
-    `Admin panel available at: ${
-      process.env.FRONTEND_URL || 'http://localhost:3000'
-    }/admin/login`
+    `panel available at: ${process.env.FRONTEND_URL || 'http://localhost:3000'}`
   );
 });

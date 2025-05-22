@@ -120,6 +120,14 @@ class Product {
       await connection.end();
     }
   }
+  // Masalah: Tidak ada validasi stok
+  static async addToCart(cartData) {
+    // Tambahkan validasi
+    const product = await Product.findById(cartData.product_id);
+    if (product.stok < cartData.jumlah) {
+      throw new Error('Stok tidak mencukupi');
+    }
+  }
 }
 
 module.exports = Product;

@@ -39,4 +39,8 @@ router.get('/recent', authenticateAdmin, async (req, res) => {
   }
 });
 
+
+// routes/transactionRoutes.js
+router.post('/notification', TransactionController.handleNotification);
+
 module.exports = router;

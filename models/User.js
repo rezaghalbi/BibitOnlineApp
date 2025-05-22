@@ -97,4 +97,20 @@ class User {
   }
 }
 
+// findByUsername
+User.findByUsername = async function (username) {
+  const connection = await mysql.createConnection(dbConfig);
+  try {
+    const [rows] = await connection.execute(
+      'SELECT * FROM users WHERE username = ?',
+      [username]
+    );
+    return rows[0];
+  } catch (error) {
+    throw error;
+  } finally {
+    await connection.end();
+  }
+};
+
 module.exports = User;

@@ -13,6 +13,7 @@ router.post('/login', UserController.login);
 
 // Rute untuk mengedit profil (dengan otentikasi)
 router.put('/profile', authenticateUser, UserController.editProfile);
+router.get('/profile', authenticateUser, UserController.getUserProfile);
 
 router.get('/count', authenticateAdmin, async (req, res) => {
   try {

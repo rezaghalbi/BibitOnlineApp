@@ -36,7 +36,7 @@ class UserController {
     const { username, password } = req.body;
 
     try {
-      const user = await User.findById(username);
+      const user = await User.findByUsername(username);
 
       if (!user) {
         return res.status(404).json({ message: 'User not found' });
@@ -62,33 +62,67 @@ class UserController {
 
   // Metode untuk mengedit profil pengguna
   static async editProfile(req, res) {
-    const userId = req.userId; // Ambil userId dari token JWT
-    const { username, nama_lengkap, email, no_telepon, alamat } = req.body;
+    const userId = req.userId;
+    const { username, nama_lengkap, email, no_telepon, alamat, newPassword } =
+      req.body;
 
     // Validasi input
     if (!username || !nama_lengkap || !email || !no_telepon || !alamat) {
-      return res.status(400).json({ message: 'All fields are required' });
+      return res.status(400).json({ message: 'Semua field wajib diisi' });
     }
 
     try {
-      const result = await User.update(userId, {
-        username,
-        nama_lengkap,
-        email,
-        no_telepon,
-        alamat,
-      });
+      const connection = await mysql.createConnection(dbConfig);
 
-      if (result.affectedRows === 0) {
-        return res.status(404).json({ message: 'User not found' });
+      // Check jika username/email sudah dipakai oleh user lain
+      const [existing] = await connection.execute(
+        `SELECT * FROM users 
+             WHERE (username = ? OR email = ?) 
+             AND user_id != ?`,
+        [username, email, userId]
+      );
+
+      if (existing.length > 0) {
+        await connection.end();
+        return res.status(400).json({
+          message: 'Username atau email sudah digunakan',
+        });
       }
 
-      res.status(200).json({ message: 'Profile updated successfully' });
+      // Update data
+      let updateQuery = `UPDATE users SET 
+            username = ?, 
+            nama_lengkap = ?, 
+            email = ?, 
+            no_telepon = ?, 
+            alamat = ?`;
+
+      const params = [username, nama_lengkap, email, no_telepon, alamat];
+
+      // Update password jika ada
+      if (newPassword) {
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        updateQuery += ', password = ?';
+        params.push(hashedPassword);
+      }
+
+      updateQuery += ' WHERE user_id = ?';
+      params.push(userId);
+
+      const [result] = await connection.execute(updateQuery, params);
+
+      if (result.affectedRows === 0) {
+        await connection.end();
+        return res.status(404).json({ message: 'User tidak ditemukan' });
+      }
+
+      await connection.end();
+      res.json({ message: 'Profil berhasil diperbarui' });
     } catch (error) {
       console.error('Error updating profile:', error);
       res.status(500).json({
         message: 'Error updating profile',
-        error: error.message || error,
+        error: error.message,
       });
     }
   }
@@ -170,6 +204,40 @@ class UserController {
       res.status(200).json(user);
     } catch (error) {
       res.status(500).json({ message: error.message });
+    }
+  }
+  static async getUserProfile(req, res) {
+    const userId = req.userId;
+
+    try {
+      const connection = await mysql.createConnection(dbConfig);
+      const [rows] = await connection.execute(
+        `SELECT 
+                user_id,
+                username,
+                nama_lengkap,
+                email,
+                no_telepon,
+                alamat
+                
+            FROM users 
+            WHERE user_id = ?`,
+        [userId]
+      );
+      await connection.end();
+
+      if (rows.length === 0) {
+        return res.status(404).json({ message: 'User tidak ditemukan' });
+      }
+
+      const userData = rows[0];
+      res.status(200).json(userData);
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+      res.status(500).json({
+        message: 'Gagal mengambil data profil',
+        error: error.message,
+      });
     }
   }
 }

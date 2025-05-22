@@ -1,23 +1,19 @@
 const Transaction = require('../models/Transaction');
 const Cart = require('../models/Cart');
+const MidtransService = require('../services/midtransService');
 
 class TransactionController {
   // Metode untuk membuat transaksi
   // Metode untuk membuat transaksi
   static async create(req, res) {
-    const { metode_pembayaran } = req.body; // Mengambil metode pembayaran dari body
-    const user_id = req.userId; // Ambil userId dari token JWT
-
-    // Validasi input
-    if (!metode_pembayaran) {
-      return res.status(400).json({ message: 'Payment method is required' });
-    }
+    const { metode_pembayaran } = req.body;
+    const user_id = req.userId;
 
     try {
-      // Ambil item dari keranjang
+      // Ambil data keranjang
       const cartItems = await Cart.getCartByUserId(user_id);
       if (cartItems.length === 0) {
-        return res.status(400).json({ message: 'Cart is empty' });
+        return res.status(400).json({ message: 'Keranjang kosong' });
       }
 
       // Hitung total harga
@@ -26,12 +22,26 @@ class TransactionController {
         0
       );
 
-      // Buat transaksi
+      // Generate order ID unik
+      const order_id = `ORDER-${Date.now()}-${Math.floor(
+        Math.random() * 1000
+      )}`;
+
+      // Buat transaksi di database
       const transactionId = await Transaction.create({
         user_id,
         total_harga,
         metode_pembayaran,
         status: 'pending',
+        order_id, // Tambahkan kolom order_id di tabel transactions
+      });
+
+      // Generate Midtrans token
+      const paymentToken = await MidtransService.createTransaction({
+        order_id,
+        gross_amount: total_harga,
+        items: cartItems,
+        customer: req.user, // Pastikan middleware authUser menyertakan data user
       });
 
       // Kosongkan keranjang
@@ -39,14 +49,16 @@ class TransactionController {
         await Cart.deleteFromCart(item.cart_id);
       }
 
-      res
-        .status(201)
-        .json({ message: 'Transaction created successfully', transactionId });
+      res.status(201).json({
+        message: 'Transaction created successfully',
+        transactionId,
+        paymentToken,
+      });
     } catch (error) {
       console.error('Error creating transaction:', error);
       res.status(500).json({
         message: 'Error creating transaction',
-        error: error.message || error,
+        error: error.message,
       });
     }
   }
@@ -105,6 +117,24 @@ class TransactionController {
         message: 'Error updating transaction status',
         error: error.message || error,
       });
+    }
+  }
+  static async handleNotification(req, res) {
+    try {
+      const notif = req.body;
+      const core = new midtransClient.Core({
+        isProduction: process.env.MIDTRANS_ENV === 'production',
+        serverKey: process.env.MIDTRANS_SERVER_KEY,
+        clientKey: process.env.MIDTRANS_CLIENT_KEY,
+      });
+
+      const status = await core.transaction.notification(notif);
+      await Transaction.updateStatus(status.order_id, status);
+
+      res.status(200).send('OK');
+    } catch (error) {
+      console.error('Notification error:', error);
+      res.status(500).json({ error: error.message });
     }
   }
 }

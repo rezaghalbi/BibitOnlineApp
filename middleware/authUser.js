@@ -1,18 +1,27 @@
 const jwt = require('jsonwebtoken');
 
 function authenticateUser(req, res, next) {
-  const token =
-    req.headers['authorization'] && req.headers['authorization'].split(' ')[1];
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+
+  console.log('Received token:', token); // Debugging
 
   if (!token) {
-    return res.sendStatus(401); // Unauthorized
+    console.error('No token provided');
+    return res.sendStatus(401);
   }
 
   jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
     if (err) {
-      return res.sendStatus(403); // Forbidden
+      console.error('Token verification error:', err.message);
+      return res.status(403).json({
+        code: 'INVALID_TOKEN',
+        message: 'Token tidak valid atau sudah kadaluarsa',
+      });
     }
-    req.userId = user.userId; // Simpan userId di request
+
+    console.log('Decoded user:', user); // Debugging
+    req.userId = user.userId;
     next();
   });
 }

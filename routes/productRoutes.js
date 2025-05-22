@@ -1,20 +1,23 @@
 const express = require('express');
 const ProductController = require('../controllers/ProductController');
 const { authenticateAdmin } = require('../middleware/authAdmin');
+const { authenticateUser } = require('../middleware/authUser');
 
 const router = express.Router();
 
+router.get('/', ProductController.getAll);
+router.get('/:product_id', ProductController.getById);
+router.get('/search', ProductController.search);
 // CRUD Products
+// Admin routes
+router.use(authenticateAdmin);
 router.post('/', authenticateAdmin, ProductController.create);
-router.get('/', authenticateAdmin, ProductController.getAll);
-router.get('/:product_id', authenticateAdmin, ProductController.getById);
 router.put('/:product_id', authenticateAdmin, ProductController.update);
 router.delete(
   '/:product_id',
   authenticateAdmin,
   ProductController.deleteProduct
 );
-router.get('/search', authenticateAdmin, ProductController.search);
 
 router.get('/count', authenticateAdmin, async (req, res) => {
   try {
@@ -61,6 +64,25 @@ router.get('/debug', authenticateAdmin, async (req, res) => {
         stack: error.stack,
       },
     });
+  }
+});
+
+// GET produk dengan filter
+router.get('/', async (req, res) => {
+  try {
+    const { search, minPrice, maxPrice, sortBy, order } = req.query;
+
+    const products = await ProductController.getFilteredProducts({
+      search,
+      minPrice: parseFloat(minPrice),
+      maxPrice: parseFloat(maxPrice),
+      sortBy,
+      order: order || 'ASC',
+    });
+
+    res.json(products);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 });
 
