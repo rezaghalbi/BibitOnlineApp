@@ -33,7 +33,7 @@ async function loadProducts() {
     const products = await response.json();
     renderProducts(products);
   } catch (error) {
-    showAlert('danger', 'Gagal memuat data produk');
+    showAlert('danger', 'Gagal memuat data produk ${errMessage}');
   }
 }
 

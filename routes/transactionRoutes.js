@@ -9,12 +9,34 @@ const router = express.Router();
 router.post('/', authenticateUser, TransactionController.create);
 
 // routes/transactionRoutes.js
+router.get('/', authenticateAdmin, async (req, res) => {
+  try {
+    const { search = '', status = 'all', sort = 'terbaru' } = req.query;
+
+    const transactions = await TransactionController.getFilteredTransactions({
+      search,
+      status,
+      sort,
+    });
+
+    res.status(200).json({
+      status: 'success',
+      data: transactions,
+    });
+  } catch (error) {
+    console.error('Error fetching transactions:', error);
+    res.status(500).json({
+      status: 'error',
+      message: 'Gagal mengambil data transaksi',
+    });
+  }
+});
 
 // Endpoint admin (tambahkan query params)
 router.get('/admin', authenticateAdmin, TransactionController.getAll);
 
 // Endpoint user (tambahkan query params)
-router.get('/user', authenticateUser, TransactionController.getAllByUserId);
+// router.get('/user', authenticateUser, TransactionController.getAllByUserId);
 router.get(
   '/:orderId',
   authenticateUser,

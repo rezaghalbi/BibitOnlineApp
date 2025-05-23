@@ -1,209 +1,123 @@
-// public/user/js/transactions.js
-document.addEventListener('DOMContentLoaded', () => {
-  checkAuth();
-  loadTransactions();
-  initEventListeners();
-  initModal();
-});
-
-// Fungsi dasar autentikasi
-const checkAuth = () => {
-  const token = localStorage.getItem('jwtToken');
-  if (!token) window.location.href = '/login';
-  return token;
-};
-
-// Inisialisasi event listener
-function initEventListeners() {
-  document
-    .getElementById('filter-status')
-    .addEventListener('change', loadTransactions);
-  document
-    .getElementById('sort-date')
-    .addEventListener('change', loadTransactions);
+function checkAuth() {
+  if (!localStorage.getItem('jwtToken')) {
+    window.location.href = '/login';
+  }
 }
 
-// Memuat transaksi dengan filter
 async function loadTransactions() {
   try {
-    showLoading();
-    const token = checkAuth();
-
-    const status = document.getElementById('filter-status').value;
-    const sort = document.getElementById('sort-date').value;
+    const status = document.getElementById('statusFilter').value;
+    const sort = document.getElementById('sortFilter').value;
 
     const response = await fetch(
       `/api/transactions/user?status=${status}&sort=${sort}`,
       {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
       }
     );
-
-    if (!response.ok) throw new Error('Gagal memuat transaksi');
 
     const { data } = await response.json();
     renderTransactions(data);
   } catch (error) {
-    showError(error.message);
-  } finally {
-    hideLoading();
+    console.error('Error:', error);
   }
 }
 
-// Render daftar transaksi
 function renderTransactions(transactions) {
-  const container = document.getElementById('transaction-list');
+  const container = document.getElementById('transactionsList');
+  container.innerHTML = '';
 
-  if (!transactions || transactions.length === 0) {
-    container.innerHTML = `
-      <div class="empty-state">
-        <img src="/user/images/empty-transaction.png" alt="No transactions">
-        <p>Belum ada transaksi</p>
-      </div>`;
-    return;
-  }
+  transactions.forEach((transaction) => {
+    const transactionEl = document.createElement('div');
+    transactionEl.className = 'transaction-card';
+    transactionEl.innerHTML = `
+            <div class="transaction-header">
+                <span>#${transaction.order_id}</span>
+                <div class="status-badge status-${transaction.payment_status}">
+                    ${transaction.payment_status}
+                </div>
+            </div>
+            <p>Total: Rp ${transaction.gross_amount.toLocaleString()}</p>
+            <p>Tanggal: ${new Date(
+              transaction.created_at
+            ).toLocaleDateString()}</p>
+        `;
 
-  container.innerHTML = transactions
-    .map(
-      (transaction) => `
-    <div class="transaction-item" data-status="${transaction.payment_status}">
-      <div class="transaction-header">
-        <div>
-          <span class="transaction-id">#${transaction.order_id}</span>
-          <span class="transaction-date">
-            ${new Date(transaction.created_at).toLocaleDateString()}
-          </span>
-        </div>
-        <span class="transaction-status status-${transaction.payment_status}">
-          ${transaction.payment_status}
-        </span>
-      </div>
-      
-      <div class="transaction-details">
-        <div class="amount-section">
-          <small>Total</small>
-          <p>Rp${transaction.gross_amount.toLocaleString()}</p>
-        </div>
-        
-        <div class="action-section">
-          ${
-            transaction.payment_status === 'pending'
-              ? `
-            <button class="continue-btn" onclick="handleContinuePayment('${transaction.order_id}')">
-              <i class="fas fa-wallet"></i> Lanjutkan Pembayaran
-            </button>
-          `
-              : `
-            <button class="detail-btn" onclick="showTransactionDetail('${transaction.order_id}')">
-              <i class="fas fa-info-circle"></i> Lihat Detail
-            </button>
-          `
-          }
-        </div>
-      </div>
-    </div>
-  `
-    )
-    .join('');
+    transactionEl.addEventListener('click', () => {
+      window.location.href = `/transaction-detail.html?order_id=${transaction.order_id}`;
+    });
+
+    container.appendChild(transactionEl);
+  });
 }
 
-// Fungsi untuk melanjutkan pembayaran
+// Handle continue payment
 window.handleContinuePayment = async (orderId) => {
   try {
-    showLoading();
-    const token = checkAuth();
+    const token = localStorage.getItem('jwtToken');
 
-    const response = await fetch(`/api/transactions/${orderId}/token`, {
+    const response = await fetch(`/api/transactions/${orderId}/payment`, {
       headers: { Authorization: `Bearer ${token}` },
     });
 
-    if (!response.ok) throw new Error('Gagal memuat token pembayaran');
+    if (!response.ok) throw new Error(await response.text());
 
     const { token: snapToken } = await response.json();
-
     window.snap.embed(snapToken, {
       embedId: 'snap-container',
-      onSuccess: () => {
-        showSuccessAlert('Pembayaran berhasil!');
-        loadTransactions();
-      },
-      onPending: (result) => {
-        console.log('Pembayaran tertunda:', result);
-      },
-      onError: (error) => {
-        showErrorAlert(`Pembayaran gagal: ${error.message}`);
-      },
+      onSuccess: () => window.location.reload(),
     });
   } catch (error) {
-    showErrorAlert(error.message);
-  } finally {
-    hideLoading();
+    alert(`Error: ${error.message}`);
   }
 };
 
-// Fungsi untuk menampilkan detail transaksi
-window.showTransactionDetail = async (orderId) => {
+// Show transaction detail
+window.showDetail = async (orderId) => {
   try {
-    showLoading();
-    const token = checkAuth();
+    const token = localStorage.getItem('jwtToken');
 
     const response = await fetch(`/api/transactions/${orderId}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
 
-    if (!response.ok) throw new Error('Gagal memuat detail transaksi');
+    if (!response.ok) throw new Error(await response.text());
 
     const { data } = await response.json();
-    renderTransactionDetail(data);
-    openModal();
+    renderDetailModal(data);
   } catch (error) {
-    showErrorAlert(error.message);
-  } finally {
-    hideLoading();
+    alert(`Error: ${error.message}`);
   }
 };
 
-// Render detail transaksi di modal
-function renderTransactionDetail(transaction) {
-  const container = document.getElementById('transaction-detail');
-  const items = JSON.parse(transaction.item_details);
-
-  container.innerHTML = `
-    <div class="detail-section">
-      <h3><i class="fas fa-receipt"></i> Detail Transaksi</h3>
-      <div class="detail-row">
-        <span>Order ID:</span>
-        <span>${transaction.order_id}</span>
+function renderDetailModal(transaction) {
+  const modal = document.getElementById('transaction-detail-modal');
+  modal.innerHTML = `
+    <div class="modal-content">
+      <h3>Detail Transaksi #${transaction.order_id}</h3>
+      <div class="detail-section">
+        <p><strong>Status:</strong> <span class="status ${
+          transaction.payment_status
+        }">${transaction.payment_status}</span></p>
+        <p><strong>Total:</strong> Rp${transaction.gross_amount.toLocaleString()}</p>
+        <p><strong>Metode Pembayaran:</strong> ${
+          transaction.payment_method || '-'
+        }</p>
+        <p><strong>Tanggal:</strong> ${new Date(
+          transaction.created_at
+        ).toLocaleString()}</p>
       </div>
-      <div class="detail-row">
-        <span>Status:</span>
-        <span class="status-${transaction.payment_status}">
-          ${transaction.payment_status}
-        </span>
-      </div>
-      <div class="detail-row">
-        <span>Total:</span>
-        <span>Rp${transaction.gross_amount.toLocaleString()}</span>
-      </div>
-      <div class="detail-row">
-        <span>Metode Pembayaran:</span>
-        <span>${transaction.payment_method || '-'}</span>
-      </div>
-      <div class="detail-row">
-        <span>Waktu Transaksi:</span>
-        <span>${new Date(transaction.transaction_time).toLocaleString()}</span>
-      </div>
-    </div>
-    
-    <div class="detail-section">
-      <h3><i class="fas fa-shopping-basket"></i> Item Pembelian</h3>
-      <div class="item-list">
-        ${items
+      
+      <div class="items-section">
+        <h4>Item Pembelian:</h4>
+        ${transaction.item_details
           .map(
             (item) => `
           <div class="item">
-            <div>${item.name}</div>
-            <div>${item.quantity} × Rp${item.price.toLocaleString()}</div>
+            <span>${item.name}</span>
+            <span>${item.quantity} × Rp${item.price.toLocaleString()}</span>
           </div>
         `
           )
@@ -211,55 +125,5 @@ function renderTransactionDetail(transaction) {
       </div>
     </div>
   `;
-}
-
-// Fungsi modal
-function initModal() {
-  const modal = document.getElementById('transaction-modal');
-  const closeBtn = document.querySelector('.close-modal');
-
-  closeBtn.onclick = () => closeModal();
-  window.onclick = (event) => {
-    if (event.target === modal) closeModal();
-  };
-}
-
-function openModal() {
-  document.getElementById('transaction-modal').style.display = 'block';
-}
-
-function closeModal() {
-  document.getElementById('transaction-modal').style.display = 'none';
-}
-
-// UI Helper functions
-function showLoading() {
-  document.getElementById('transaction-list').innerHTML = `
-    <div class="loading-indicator">
-      <div class="spinner"></div>
-      Memuat transaksi...
-    </div>`;
-}
-
-function hideLoading() {
-  const loading = document.querySelector('.loading-indicator');
-  if (loading) loading.remove();
-}
-
-function showError(message) {
-  const container = document.getElementById('transaction-list');
-  container.innerHTML = `
-    <div class="error-state">
-      <i class="fas fa-exclamation-triangle"></i>
-      <p>${message}</p>
-      <button onclick="loadTransactions()">Coba Lagi</button>
-    </div>`;
-}
-
-function showErrorAlert(message) {
-  alert(`Error: ${message}`);
-}
-
-function showSuccessAlert(message) {
-  alert(`Sukses: ${message}`);
+  modal.style.display = 'block';
 }

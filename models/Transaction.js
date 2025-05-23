@@ -130,40 +130,37 @@ class Transaction {
     const connection = await mysql.createConnection(dbConfig);
     try {
       let query = `
-      SELECT 
-        t.*, 
-        u.nama_lengkap AS customer_name 
-      FROM transactions t
-      JOIN users u ON t.user_id = u.user_id
-      WHERE 1=1
-    `;
+            SELECT 
+                t.order_id,
+                u.nama_lengkap AS customer_name,
+                t.gross_amount,
+                t.payment_status,
+                t.payment_method,
+                t.transaction_time
+            FROM transactions t
+            JOIN users u ON t.user_id = u.user_id
+            WHERE 1=1
+        `;
 
       const params = [];
 
-      // Filter pencarian nama
       if (search) {
         query += ' AND u.nama_lengkap LIKE ?';
         params.push(`%${search}%`);
       }
 
-      // Filter status
-      if (status && status !== 'all') {
+      if (status !== 'all') {
         query += ' AND t.payment_status = ?';
         params.push(status);
       }
 
-      // Sorting
-      if (sort === 'terbaru') {
-        query += ' ORDER BY t.created_at DESC';
-      } else if (sort === 'terlama') {
-        query += ' ORDER BY t.created_at ASC';
-      }
+      query +=
+        sort === 'terbaru'
+          ? ' ORDER BY t.transaction_time DESC'
+          : ' ORDER BY t.transaction_time ASC';
 
       const [rows] = await connection.execute(query, params);
-      return rows.map((row) => ({
-        ...row,
-        item_details: JSON.parse(row.item_details),
-      }));
+      return rows;
     } finally {
       await connection.end();
     }

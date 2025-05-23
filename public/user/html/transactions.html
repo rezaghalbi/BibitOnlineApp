@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Daftar Transaksi</title>
+    <link rel="stylesheet" href="../css/transactions.css" />
+  </head>
+  <body>
+    <!-- Navbar -->
+    <div id="navbar"></div>
+
+    <div class="container">
+      <h1>Daftar Transaksi</h1>
+
+      <!-- Filter -->
+      <div class="filter-section">
+        <select id="statusFilter" class="filter-select">
+          <option value="all">Semua Status</option>
+          <option value="pending">Pending</option>
+          <option value="settlement">Berhasil</option>
+          <option value="cancel">Dibatalkan</option>
+        </select>
+
+        <select id="sortFilter" class="filter-select">
+          <option value="terbaru">Terbaru</option>
+          <option value="terlama">Terlama</option>
+        </select>
+      </div>
+
+      <!-- Daftar Transaksi -->
+      <div id="transactionsList" class="transactions-container"></div>
+    </div>
+
+    <script src="../js/auth.js"></script>
+    <script src="../js/transactions.js"></script>
+  </body>
+</html>

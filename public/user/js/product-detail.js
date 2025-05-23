@@ -26,7 +26,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Check authentication
   const checkAuth = () => {
     const token = localStorage.getItem('jwtToken');
-    if (!token) window.location.href = '/login';
+    if (!toKen) window.location.href = '/login';
     return token;
   };
 

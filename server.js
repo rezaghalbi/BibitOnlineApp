@@ -91,6 +91,7 @@ app.use('/api/cart', cartRoutes);
 app.use('/api/transactions', transactionRoutes);
 
 // Static files
+app.use('/admin', express.static(path.join(__dirname, 'public/admin')));
 app.use(
   '/admin/css',
   express.static(path.join(__dirname, 'public/admin/css'), {
@@ -135,6 +136,10 @@ app.get('/admin/login', (req, res) => {
 
 app.get('/admin/dashboard', (req, res) => {
   res.sendFile(path.join(__dirname, 'public/admin/dashboard.html'));
+});
+// routes untuk transaction
+app.get('/admin/transactions', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public/admin/transactions.html'));
 });
 
 app.use(

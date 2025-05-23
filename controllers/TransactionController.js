@@ -67,26 +67,15 @@ class TransactionController {
 
   // Metode untuk melihat semua transaksi berdasarkan user_id
   // Metode untuk user (getAllByUserId) - Tambah filter
-  static async getAllByUserId(req, res) {
+  static async getFilteredTransactions(params) {
     try {
-      const { status = 'all', sort = 'terbaru' } = req.query;
-      const user_id = req.userId;
-
-      const transactions = await Transaction.getFilteredTransactions({
-        user_id,
-        status,
-        sort,
-      });
-
-      res.status(200).json({
-        status: 'success',
-        data: transactions,
-      });
+      const transactions = await Transaction.getFilteredTransactions(params);
+      return transactions.map((transaction) => ({
+        ...transaction,
+        transaction_time: new Date(transaction.transaction_time).toISOString(),
+      }));
     } catch (error) {
-      res.status(500).json({
-        status: 'error',
-        message: 'Gagal mengambil transaksi',
-      });
+      throw new Error('Failed to fetch transactions');
     }
   }
   // Metode untuk melihat semua transaksi (admin)
