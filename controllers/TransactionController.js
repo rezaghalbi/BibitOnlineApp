@@ -210,10 +210,23 @@ class TransactionController {
   static async getTransactionDetail(req, res) {
     try {
       const { orderId } = req.params;
+      const userId = req.user.id;
+
       const transaction = await Transaction.findByOrderId(orderId);
 
       if (!transaction) {
-        return res.status(404).json({ message: 'Transaksi tidak ditemukan' });
+        return res.status(404).json({
+          status: 'error',
+          message: 'Transaksi tidak ditemukan',
+        });
+      }
+
+      // Authorization: Pastikan transaksi milik user yang bersangkutan
+      if (transaction.user_id !== userId) {
+        return res.status(403).json({
+          status: 'error',
+          message: 'Akses ditolak',
+        });
       }
 
       res.json({
@@ -224,7 +237,11 @@ class TransactionController {
         },
       });
     } catch (error) {
-      res.status(500).json({ message: error.message });
+      console.error('Error:', error);
+      res.status(500).json({
+        status: 'error',
+        message: error.message,
+      });
     }
   }
   // get transaction by user id
@@ -243,6 +260,45 @@ class TransactionController {
       });
     } catch (error) {
       res.status(500).json({ message: error.message });
+    }
+  }
+  static async getUserTransactions(req, res) {
+    try {
+      const {
+        status = 'all',
+        sort = 'terbaru',
+        payment_method = 'all',
+      } = req.query;
+      const userId = req.user.id;
+
+      let query = `SELECT * FROM transactions WHERE user_id = ?`;
+      const queryParams = [userId];
+
+      if (status !== 'all') {
+        query += ' AND payment_status = ?';
+        queryParams.push(status);
+      }
+
+      if (payment_method !== 'all') {
+        query += ' AND payment_method = ?';
+        queryParams.push(payment_method);
+      }
+
+      const sortOrder = sort === 'terlama' ? 'ASC' : 'DESC';
+      query += ` ORDER BY created_at ${sortOrder}`;
+
+      const [transactions] = await pool.query(query, queryParams);
+
+      res.json({
+        status: 'success',
+        data: transactions,
+      });
+    } catch (error) {
+      console.error('[BE Error]', error);
+      res.status(500).json({
+        status: 'error',
+        message: 'Gagal memuat transaksi',
+      });
     }
   }
 }

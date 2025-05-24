@@ -9,7 +9,7 @@ const router = express.Router();
 router.post('/', authenticateUser, TransactionController.create);
 
 // routes/transactionRoutes.js
-router.get('/', authenticateAdmin, async (req, res) => {
+router.get('/admin', async (req, res) => {
   try {
     const { search = '', status = 'all', sort = 'terbaru' } = req.query;
 
@@ -37,8 +37,9 @@ router.get('/admin', authenticateAdmin, TransactionController.getAll);
 
 // Endpoint user (tambahkan query params)
 // router.get('/user', authenticateUser, TransactionController.getAllByUserId);
+router.get('/', authenticateUser, TransactionController.getUserTransactions);
 router.get(
-  '/:orderId',
+  '/:orderId/detail',
   authenticateUser,
   TransactionController.getTransactionDetail
 );

@@ -128,6 +128,15 @@ app.use(
     },
   })
 );
+// Konfigurasi static files user html
+app.use(
+  '/user/html',
+  express.static(path.join(__dirname, 'public/user/html'), {
+    setHeaders: (res) => {
+      res.set('Content-Type', 'text/html');
+    },
+  })
+);
 
 // Admin Pages
 app.get('/admin/login', (req, res) => {
@@ -150,7 +159,7 @@ app.use(
 // User Pages
 // Di server.js tambahkan route untuk transaction page
 app.get('/transactions', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public/user/html/transaction.html'));
+  res.sendFile(path.join(__dirname, 'public/user/html/transactions.html'));
 });
 app.get('/login', (req, res) => {
   res.sendFile(path.join(__dirname, 'public/user/html/login.html'));

@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Detail Transaksi</title>
+    <link rel="stylesheet" href="../css/transaction-detail.css" />
+  </head>
+  <body>
+    <!-- Navbar -->
+    <div id="navbar"></div>
+
+    <div class="container">
+      <h1>Detail Transaksi #<span id="orderId"></span></h1>
+
+      <div class="transaction-info">
+        <div class="status-badge" id="statusBadge"></div>
+        <p>Total: Rp <span id="totalAmount"></span></p>
+        <p>Tanggal: <span id="transactionDate"></span></p>
+      </div>
+
+      <h3>Item Pembelian:</h3>
+      <div id="itemsList" class="items-container"></div>
+
+      <div class="action-buttons" id="actionButtons">
+        <button class="btn-continue" onclick="handleContinuePayment()">
+          Lanjutkan Pembayaran
+        </button>
+        <button class="btn-cancel" onclick="handleCancelTransaction()">
+          Batalkan Transaksi
+        </button>
+      </div>
+    </div>
+
+    <script src="../js/auth.js"></script>
+    <script src="../js/transaction-detail.js"></script>
+  </body>
+</html>

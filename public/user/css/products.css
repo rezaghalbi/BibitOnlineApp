@@ -2,6 +2,9 @@
   --primary-color: #1d8513;
   --secondary-color: #c2c2c2;
 }
+.main.container {
+  margin-top: 40rem !important;
+}
 
 .product-card {
   transition: transform 0.3s ease, box-shadow 0.3s ease;

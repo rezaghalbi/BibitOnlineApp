@@ -1,5 +1,6 @@
 const mysql = require('mysql2/promise');
 const dbConfig = require('../config/dbConfig');
+const pool = require('../config/db');
 
 class Transaction {
   static async create(transactionData) {
@@ -200,6 +201,43 @@ class Transaction {
       return result;
     } finally {
       await connection.end(); // Tutup koneksi
+    }
+  }
+  static async getUserTransactions(params) {
+    try {
+      const { userId, status, sort } = params;
+
+      let query = `
+      SELECT 
+        user_id,
+        order_id,
+        gross_amount,
+        payment_status,
+        created_at,
+        payment_method 
+      FROM transactions 
+      WHERE user_id = ?
+    `;
+
+      const queryParams = [userId];
+
+      if (status !== 'all') {
+        query += ' AND payment_status = ?';
+        queryParams.push(status);
+      }
+
+      // Validasi sorting
+      const sortOrder = sort === 'terlama' ? 'ASC' : 'DESC';
+      query += ` ORDER BY created_at ${sortOrder}`;
+
+      console.log('[DB Query]', query);
+      console.log('[DB Params]', queryParams);
+
+      const [transactions] = await pool.query(query, queryParams);
+      return transactions;
+    } catch (error) {
+      console.error('[DB Error]', error);
+      throw new Error('Gagal mengambil data dari database');
     }
   }
 }

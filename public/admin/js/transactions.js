@@ -20,7 +20,7 @@ async function loadTransactions() {
     const sort = document.getElementById('sortSelect').value;
 
     const response = await fetch(
-      `/api/transactions?search=${encodeURIComponent(
+      `/api/transactions/admin?search=${encodeURIComponent(
         search
       )}&status=${status}&sort=${sort}`,
       {

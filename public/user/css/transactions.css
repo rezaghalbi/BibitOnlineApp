@@ -1,49 +1,79 @@
-.transactions-container {
-  margin-top: 2rem;
+.transaction-table {
+  border-collapse: separate;
+  border-spacing: 0 0.75rem;
 }
 
-.transaction-card {
-  background: #fff;
-  border-radius: 8px;
-  padding: 1.5rem;
-  margin-bottom: 1rem;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  transition: transform 0.2s;
+.transaction-table th {
+  background-color: #f8f9fa;
+  padding: 1rem;
+  font-weight: 600;
+  color: #495057;
+  border-bottom: 2px solid #dee2e6;
 }
 
-.transaction-card:hover {
-  transform: translateY(-2px);
-  cursor: pointer;
+.transaction-table td {
+  padding: 1rem;
+  background-color: white;
+  vertical-align: middle;
+  border-top: 1px solid #dee2e6;
 }
 
-.status-badge {
-  display: inline-block;
-  padding: 0.25rem 0.75rem;
-  border-radius: 20px;
-  font-size: 0.875rem;
+.badge {
+  padding: 0.5em 0.75em;
+  border-radius: 0.25rem;
+  font-weight: 500;
+  text-transform: capitalize;
 }
 
-.status-pending {
-  background: #ffd700;
-  color: #000;
-}
-.status-settlement {
-  background: #4caf50;
-  color: #fff;
-}
-.status-cancel {
-  background: #f44336;
-  color: #fff;
+.btn-detail {
+  transition: all 0.2s ease;
+  color: #0d6efd;
+  background-color: rgba(13, 110, 253, 0.1);
+  border: none;
+  padding: 0.5rem 0.75rem;
 }
 
-.filter-section {
-  margin-bottom: 1.5rem;
-  display: flex;
-  gap: 1rem;
+.btn-detail:hover {
+  color: #0a58ca;
+  background-color: rgba(13, 110, 253, 0.2);
+  transform: scale(1.05);
 }
 
-.filter-select {
-  padding: 0.5rem;
-  border-radius: 4px;
-  border: 1px solid #ddd;
+@media (max-width: 768px) {
+  .transaction-table {
+    border: 0;
+  }
+
+  .transaction-table thead {
+    display: none;
+  }
+
+  .transaction-table tr {
+    display: block;
+    margin-bottom: 1rem;
+    border: 1px solid #dee2e6;
+    border-radius: 0.25rem;
+  }
+
+  .transaction-table td {
+    display: block;
+    text-align: right;
+    border-top: none;
+  }
+
+  .transaction-table td::before {
+    content: attr(data-label);
+    float: left;
+    font-weight: 600;
+    color: #495057;
+  }
+
+  .transaction-table td:last-child {
+    border-bottom: 0;
+  }
+
+  .btn-detail {
+    width: 100%;
+    margin-top: 1rem;
+  }
 }
